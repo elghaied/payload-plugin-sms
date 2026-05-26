@@ -3,7 +3,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
 import { buildConfig } from 'payload'
-import { payloadPluginSms } from 'payload-plugin-sms'
+import { smsPlugin } from 'payload-plugin-sms'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
@@ -57,13 +57,7 @@ const buildConfigWithMemoryDB = async () => {
     onInit: async (payload) => {
       await seed(payload)
     },
-    plugins: [
-      payloadPluginSms({
-        collections: {
-          posts: true,
-        },
-      }),
-    ],
+    plugins: [smsPlugin({})],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
     sharp,
     typescript: {
