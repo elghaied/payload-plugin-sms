@@ -75,8 +75,9 @@ const buildConfigWithMemoryDB = async () => {
     plugins: [
       smsPlugin({
         adapter: devSMSAdapter,
-        collections: { logs: true },
+        collections: { logs: { statusHistory: true } },
         widgets: true,
+        webhooks: { enabled: true },
       }),
     ],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
