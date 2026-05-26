@@ -30,7 +30,7 @@ describe('smsPlugin webhook registration', () => {
       adapter: adapterWithWebhook(),
       collections: { logs: true },
       webhooks: { enabled: true },
-    })(baseConfig())
+    })(baseConfig()) as Config
     const paths = (result.endpoints ?? []).map((e) => e.path)
     expect(paths).toContain('/sms/webhooks/mock')
   })
@@ -39,7 +39,7 @@ describe('smsPlugin webhook registration', () => {
     const result = smsPlugin({
       adapter: adapterWithWebhook(),
       collections: { logs: true },
-    })(baseConfig())
+    })(baseConfig()) as Config
     const paths = (result.endpoints ?? []).map((e) => e.path)
     expect(paths.find((p) => p.startsWith('/sms/webhooks/'))).toBeUndefined()
   })
@@ -49,7 +49,7 @@ describe('smsPlugin webhook registration', () => {
       adapter: adapterWithWebhook(),
       collections: { logs: true },
       webhooks: { enabled: true, basePath: '/notifications/sms' },
-    })(baseConfig())
+    })(baseConfig()) as Config
     const paths = (result.endpoints ?? []).map((e) => e.path)
     expect(paths).toContain('/notifications/sms/mock')
   })
@@ -66,7 +66,7 @@ describe('smsPlugin webhook registration', () => {
       adapter: adapterNoWebhook as any,
       collections: { logs: true },
       webhooks: { enabled: true },
-    })(baseConfig())
+    })(baseConfig()) as Config
     const payload = await runOnInit(result)
     expect(payload.logger.warn).toHaveBeenCalled()
   })
@@ -75,7 +75,7 @@ describe('smsPlugin webhook registration', () => {
     const result = smsPlugin({
       adapter: adapterWithWebhook(),
       webhooks: { enabled: true },
-    })(baseConfig())
+    })(baseConfig()) as Config
     const payload = await runOnInit(result)
     expect(payload.logger.warn).toHaveBeenCalled()
   })
@@ -85,7 +85,7 @@ describe('smsPlugin webhook registration', () => {
       adapter: adapterWithWebhook(),
       collections: { logs: true },
       webhooks: { enabled: true, verifySignature: false },
-    })(baseConfig())
+    })(baseConfig()) as Config
     const payload = await runOnInit(result)
     expect(payload.logger.warn).toHaveBeenCalled()
   })

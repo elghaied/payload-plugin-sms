@@ -67,7 +67,7 @@ describe('aws-sns webhook', () => {
       // Test seam: instead of fetching the URL, return our self-signed cert.
       fetchCert: async () => certPem,
       // Side-effect for SubscriptionConfirmation
-      fetch: fetchSpy,
+      fetch: fetchSpy as unknown as (url: string) => Promise<Response>,
     })
   })
 
