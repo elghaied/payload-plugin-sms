@@ -3,10 +3,12 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
 import { buildConfig } from 'payload'
-import { payloadPluginSms } from 'payload-plugin-sms'
+import { smsPlugin } from 'payload-plugin-sms'
+import { mockAdapter } from 'payload-plugin-sms/mock'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { testSmsEndpoint } from './endpoints/testSms.js'
 import { testEmailAdapter } from './helpers/testEmailAdapter.js'
 import { seed } from './seed.js'
 
@@ -17,11 +19,13 @@ if (!process.env.ROOT_DIR) {
   process.env.ROOT_DIR = dirname
 }
 
+export const devSMSAdapter = mockAdapter({ defaultFrom: '+15550000000' })
+
 const buildConfigWithMemoryDB = async () => {
   if (process.env.NODE_ENV === 'test') {
     const memoryDB = await MongoMemoryReplSet.create({
       replSet: {
-        count: 3,
+        count: 1,
         dbName: 'payloadmemory',
       },
     })
@@ -52,16 +56,17 @@ const buildConfigWithMemoryDB = async () => {
       ensureIndexes: true,
       url: process.env.DATABASE_URL || '',
     }),
+    endpoints: [testSmsEndpoint],
     editor: lexicalEditor(),
     email: testEmailAdapter,
     onInit: async (payload) => {
       await seed(payload)
     },
     plugins: [
-      payloadPluginSms({
-        collections: {
-          posts: true,
-        },
+      smsPlugin({
+        adapter: devSMSAdapter,
+        collections: { logs: true },
+        widgets: true,
       }),
     ],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',

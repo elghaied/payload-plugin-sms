@@ -2,51 +2,78 @@ import type { Payload } from 'payload'
 
 import config from '@payload-config'
 import { createPayloadRequest, getPayload } from 'payload'
-import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import { SMSValidationError } from 'payload-plugin-sms'
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
-import { customEndpointHandler } from '../src/endpoints/customEndpointHandler.js'
+import { testSmsEndpoint } from './endpoints/testSms.js'
+import { devSMSAdapter } from './payload.config.js'
 
 let payload: Payload
-
-afterAll(async () => {
-  await payload.destroy()
-})
 
 beforeAll(async () => {
   payload = await getPayload({ config })
 })
 
-describe('Plugin integration tests', () => {
-  test('should query custom endpoint added by plugin', async () => {
-    const request = new Request('http://localhost:3000/api/my-plugin-endpoint', {
-      method: 'GET',
-    })
+afterAll(async () => {
+  await payload.destroy()
+})
 
-    const payloadRequest = await createPayloadRequest({ config, request })
-    const response = await customEndpointHandler(payloadRequest)
-    expect(response.status).toBe(200)
+beforeEach(() => {
+  devSMSAdapter.reset()
+})
 
-    const data = await response.json()
-    expect(data).toMatchObject({
-      message: 'Hello from custom endpoint',
-    })
+describe('payload-plugin-sms integration', () => {
+  test('payload.sendSMS is registered', () => {
+    expect(typeof payload.sendSMS).toBe('function')
   })
 
-  test('can create post with custom text field added by plugin', async () => {
-    const post = await payload.create({
-      collection: 'posts',
-      data: {
-        addedByPlugin: 'added by plugin',
-      },
-    })
-    expect(post.addedByPlugin).toBe('added by plugin')
+  test('sms-logs collection is registered', () => {
+    expect(payload.collections['sms-logs']).toBeDefined()
   })
 
-  test('plugin creates and seeds plugin-collection', async () => {
-    expect(payload.collections['plugin-collection']).toBeDefined()
+  test('rejects non-E.164 `to`', async () => {
+    await expect(
+      payload.sendSMS({ to: '5551234567', body: 'x' }),
+    ).rejects.toBeInstanceOf(SMSValidationError)
+  })
 
-    const { docs } = await payload.find({ collection: 'plugin-collection' })
+  test('sends through adapter and creates a log row', async () => {
+    const result = await payload.sendSMS({
+      to: '+15551234567',
+      body: 'hello from int test',
+    })
+    expect(result.provider).toBe('mock')
+    expect(result.status).toBe('sent')
+    expect(devSMSAdapter.messages).toHaveLength(1)
 
+    const { docs } = await payload.find({
+      collection: 'sms-logs',
+      where: { providerMessageId: { equals: result.id } },
+    })
     expect(docs).toHaveLength(1)
+    expect(docs[0].to).toBe('+15551234567')
+    expect(docs[0].provider).toBe('mock')
+    expect(docs[0].status).toBe('sent')
+  })
+})
+
+describe('dev test-sms endpoint', () => {
+  test('returns 400 when ?to is missing', async () => {
+    const request = new Request('http://localhost:3000/api/test-sms')
+    const payloadRequest = await createPayloadRequest({ config, request })
+    if (typeof testSmsEndpoint.handler !== 'function') throw new Error('no handler')
+    const response = await testSmsEndpoint.handler(payloadRequest)
+    expect(response.status).toBe(400)
+  })
+
+  test('sends SMS when ?to is provided', async () => {
+    const request = new Request('http://localhost:3000/api/test-sms?to=%2B15551234567&body=hey')
+    const payloadRequest = await createPayloadRequest({ config, request })
+    if (typeof testSmsEndpoint.handler !== 'function') throw new Error('no handler')
+    const response = await testSmsEndpoint.handler(payloadRequest)
+    expect(response.status).toBe(200)
+    const data = (await response.json()) as { ok: boolean; result: { provider: string } }
+    expect(data.ok).toBe(true)
+    expect(data.result.provider).toBe('mock')
   })
 })
