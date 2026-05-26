@@ -9,7 +9,6 @@ import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { testSmsEndpoint } from './endpoints/testSms.js'
-import { testEmailAdapter } from './helpers/testEmailAdapter.js'
 import { seed } from './seed.js'
 
 const filename = fileURLToPath(import.meta.url)
@@ -58,7 +57,6 @@ const buildConfigWithMemoryDB = async () => {
     }),
     endpoints: [testSmsEndpoint],
     editor: lexicalEditor(),
-    email: testEmailAdapter,
     onInit: async (payload) => {
       await seed(payload)
     },
