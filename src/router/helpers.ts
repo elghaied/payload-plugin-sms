@@ -85,3 +85,15 @@ export const byCountryPrefix = (
     )
   }
 }
+
+export const byRoundRobin = (providers: ProviderName[]): RouteFunction => {
+  if (providers.length === 0) {
+    throw new Error('byRoundRobin: providers list must be non-empty')
+  }
+  let counter = 0
+  return async () => {
+    const name = providers[counter % providers.length]
+    counter += 1
+    return name
+  }
+}

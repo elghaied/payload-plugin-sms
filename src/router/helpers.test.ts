@@ -4,7 +4,7 @@ import { describe, expect, test, vi } from 'vitest'
 
 import { mockAdapter } from '../adapters/mock/index.js'
 import { SMSProviderError } from '../errors.js'
-import { byCountryPrefix, byTenantLookup } from './helpers.js'
+import { byTenantLookup, byCountryPrefix, byRoundRobin } from './helpers.js'
 import type { RouteArgs } from './types.js'
 
 const stubPayload = (
@@ -137,5 +137,20 @@ describe('byCountryPrefix', () => {
   test('throws SMSProviderError when no match and no fallback', async () => {
     const route = byCountryPrefix({ '+33': 'telnyx' })
     await expect(route(argsWithTo('+15551234567'))).rejects.toBeInstanceOf(SMSProviderError)
+  })
+})
+
+describe('byRoundRobin', () => {
+  test('cycles through providers in order', async () => {
+    const route = byRoundRobin(['a', 'b', 'c'])
+    const args = argsWithTo('+15551234567')
+    expect(await route(args)).toBe('a')
+    expect(await route(args)).toBe('b')
+    expect(await route(args)).toBe('c')
+    expect(await route(args)).toBe('a')
+  })
+
+  test('throws at construction when providers is empty', () => {
+    expect(() => byRoundRobin([])).toThrow()
   })
 })
