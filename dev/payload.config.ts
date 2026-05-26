@@ -8,6 +8,7 @@ import { mockAdapter } from 'payload-plugin-sms/mock'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { testSmsEndpoint } from './endpoints/testSms.js'
 import { testEmailAdapter } from './helpers/testEmailAdapter.js'
 import { seed } from './seed.js'
 
@@ -55,6 +56,7 @@ const buildConfigWithMemoryDB = async () => {
       ensureIndexes: true,
       url: process.env.DATABASE_URL || '',
     }),
+    endpoints: [testSmsEndpoint],
     editor: lexicalEditor(),
     email: testEmailAdapter,
     onInit: async (payload) => {

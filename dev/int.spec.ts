@@ -1,10 +1,11 @@
 import type { Payload } from 'payload'
 
 import config from '@payload-config'
-import { getPayload } from 'payload'
+import { createPayloadRequest, getPayload } from 'payload'
 import { SMSValidationError } from 'payload-plugin-sms'
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
+import { testSmsEndpoint } from './endpoints/testSms.js'
 import { devSMSAdapter } from './payload.config.js'
 
 let payload: Payload
@@ -53,5 +54,26 @@ describe('payload-plugin-sms integration', () => {
     expect(docs[0].to).toBe('+15551234567')
     expect(docs[0].provider).toBe('mock')
     expect(docs[0].status).toBe('sent')
+  })
+})
+
+describe('dev test-sms endpoint', () => {
+  test('returns 400 when ?to is missing', async () => {
+    const request = new Request('http://localhost:3000/api/test-sms')
+    const payloadRequest = await createPayloadRequest({ config, request })
+    if (typeof testSmsEndpoint.handler !== 'function') throw new Error('no handler')
+    const response = await testSmsEndpoint.handler(payloadRequest)
+    expect(response.status).toBe(400)
+  })
+
+  test('sends SMS when ?to is provided', async () => {
+    const request = new Request('http://localhost:3000/api/test-sms?to=%2B15551234567&body=hey')
+    const payloadRequest = await createPayloadRequest({ config, request })
+    if (typeof testSmsEndpoint.handler !== 'function') throw new Error('no handler')
+    const response = await testSmsEndpoint.handler(payloadRequest)
+    expect(response.status).toBe(200)
+    const data = (await response.json()) as { ok: boolean; result: { provider: string } }
+    expect(data.ok).toBe(true)
+    expect(data.result.provider).toBe('mock')
   })
 })
