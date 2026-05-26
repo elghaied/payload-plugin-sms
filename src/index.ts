@@ -1,10 +1,13 @@
-import type { Config, Plugin } from 'payload'
+import './augment.js'
 
-export interface SMSPluginConfig {
-  disabled?: boolean
-}
-
-export const smsPlugin =
-  (_pluginConfig: SMSPluginConfig): Plugin =>
-  (config: Config): Config =>
-    config
+export { SMSProviderError, SMSValidationError } from './errors.js'
+export { smsPlugin } from './plugin.js'
+export type {
+  SMSAdapter,
+  SMSCost,
+  SMSLogsCollectionOptions,
+  SMSMessage,
+  SMSPluginConfig,
+  SMSResult,
+  SMSStatus,
+} from './types.js'
