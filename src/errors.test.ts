@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { SMSProviderError, SMSValidationError } from './errors.js'
+import { SMSProviderError, SMSValidationError, SMSWebhookVerificationError } from './errors.js'
 
 describe('SMSValidationError', () => {
   test('is an Error subclass', () => {
@@ -23,6 +23,22 @@ describe('SMSProviderError', () => {
   test('preserves cause', () => {
     const cause = new Error('underlying')
     const err = new SMSProviderError('wrapped', { cause })
+    expect(err.cause).toBe(cause)
+  })
+})
+
+describe('SMSWebhookVerificationError', () => {
+  test('is an Error subclass', () => {
+    const err = new SMSWebhookVerificationError('bad sig')
+    expect(err).toBeInstanceOf(Error)
+    expect(err).toBeInstanceOf(SMSWebhookVerificationError)
+    expect(err.name).toBe('SMSWebhookVerificationError')
+    expect(err.message).toBe('bad sig')
+  })
+
+  test('preserves cause', () => {
+    const cause = new Error('inner')
+    const err = new SMSWebhookVerificationError('wrapped', { cause })
     expect(err.cause).toBe(cause)
   })
 })

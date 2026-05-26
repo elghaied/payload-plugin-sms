@@ -1,6 +1,8 @@
+import type { PayloadRequest } from 'payload'
+
 import { describe, expect, test } from 'vitest'
 
-import { SMSProviderError } from '../../errors.js'
+import { SMSProviderError, SMSWebhookVerificationError } from '../../errors.js'
 import { mockAdapter } from './index.js'
 
 describe('mockAdapter', () => {
@@ -55,5 +57,40 @@ describe('mockAdapter', () => {
       body: 'x',
     })
     expect(result.status).toBe('delivered')
+  })
+})
+
+describe('mockAdapter.webhook', () => {
+  test('verify accepts x-mock-signature: ok', async () => {
+    const a = mockAdapter()
+    const headers = new Headers()
+    headers.set('x-mock-signature', 'ok')
+    await a.webhook!.verify({ headers } as unknown as PayloadRequest, Buffer.from(''))
+  })
+
+  test('verify throws SMSWebhookVerificationError on bad signature', async () => {
+    const a = mockAdapter()
+    const headers = new Headers()
+    headers.set('x-mock-signature', 'nope')
+    await expect(
+      a.webhook!.verify({ headers } as unknown as PayloadRequest, Buffer.from('')),
+    ).rejects.toBeInstanceOf(SMSWebhookVerificationError)
+  })
+
+  test('parse extracts providerMessageId, status, optional fields', async () => {
+    const a = mockAdapter()
+    const body = JSON.stringify({
+      providerMessageId: 'mock-1',
+      status: 'delivered',
+      errorCode: undefined,
+    })
+    const events = await a.webhook!.parse(
+      {} as PayloadRequest,
+      Buffer.from(body),
+    )
+    expect(events).toHaveLength(1)
+    expect(events[0].providerMessageId).toBe('mock-1')
+    expect(events[0].status).toBe('delivered')
+    expect(events[0].occurredAt).toBeInstanceOf(Date)
   })
 })

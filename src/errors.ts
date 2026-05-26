@@ -8,3 +8,10 @@ export class SMSProviderError extends Error {
     super(message, options)
   }
 }
+
+export class SMSWebhookVerificationError extends Error {
+  override name = 'SMSWebhookVerificationError'
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options)
+  }
+}

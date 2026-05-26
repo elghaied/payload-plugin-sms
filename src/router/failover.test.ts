@@ -3,6 +3,7 @@ import type { Payload } from 'payload'
 import { describe, expect, test } from 'vitest'
 
 import { mockAdapter } from '../adapters/mock/index.js'
+import { routerAdapter } from './index.js'
 import { withFailover } from './failover.js'
 import type { RouteArgs, RouteFunction } from './types.js'
 
@@ -32,5 +33,16 @@ describe('withFailover', () => {
     const route = withFailover(inner, ['a', 'b'])
     const r = await route(makeArgs())
     expect(r).toEqual(['x', 'y'])
+  })
+})
+
+describe('withFailover preserves routerAdapter.webhooks', () => {
+  test('webhooks survive when withFailover wraps the route fn', () => {
+    const r = routerAdapter({
+      providers: { m: mockAdapter() },
+      route: withFailover(() => 'm', []),
+    }) as { webhooks: Array<{ adapterName: string; handler: unknown }> }
+    expect(r.webhooks).toHaveLength(1)
+    expect(r.webhooks[0].adapterName).toBe('m')
   })
 })

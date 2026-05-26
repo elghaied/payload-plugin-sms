@@ -3,15 +3,23 @@ import type {
   SMSAdapter,
   SMSResult,
   SMSStatus,
+  SMSWebhookHandler,
 } from '../../types.js'
 
 import { SMSProviderError } from '../../errors.js'
+import { makeTwilioWebhook } from './webhook.js'
 
 export interface TwilioAdapterOptions {
   accountSid: string
   authToken: string
   defaultFrom?: string
   messagingServiceSid?: string
+  webhook?: {
+    /** Path segment under basePath; defaults to "twilio". */
+    path?: string
+    /** Defaults to false; see SMSPluginConfig.webhooks.trustProxy. */
+    trustProxy?: boolean
+  } | false
 }
 
 const STATUS_MAP: Record<string, SMSStatus> = {
@@ -40,9 +48,21 @@ const loadTwilio = async (): Promise<(sid: string, token: string) => unknown> =>
   }
 }
 
+const buildWebhook = (opts: TwilioAdapterOptions): SMSWebhookHandler | undefined => {
+  if (opts.webhook === false) return undefined
+  const baseHandler = makeTwilioWebhook({
+    authToken: opts.authToken,
+    trustProxy: opts.webhook?.trustProxy,
+  })
+  return opts.webhook?.path
+    ? { ...baseHandler, path: opts.webhook.path }
+    : baseHandler
+}
+
 export const twilioAdapter = (opts: TwilioAdapterOptions): SMSAdapter => ({
   name: 'twilio',
   defaultFrom: opts.defaultFrom,
+  webhook: buildWebhook(opts),
   async send(message: OutboundSMSMessage): Promise<SMSResult> {
     const twilio = await loadTwilio()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

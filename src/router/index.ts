@@ -1,18 +1,31 @@
 import type { Payload } from 'payload'
 
-import type { SMSAdapter, OutboundSMSMessage, SMSResult } from '../types.js'
+import type {
+  OutboundSMSMessage,
+  RoutedSMSAdapter,
+  SMSResult,
+  SMSWebhookHandler,
+} from '../types.js'
 
 import { SMSProviderError, SMSValidationError } from '../errors.js'
 
 import type { RouteArgs, RouteResult, RouterAdapterOptions } from './types.js'
 
-export const routerAdapter = (opts: RouterAdapterOptions): SMSAdapter => {
+export const routerAdapter = (opts: RouterAdapterOptions): RoutedSMSAdapter => {
   const providers = Object.freeze({ ...opts.providers })
   let payloadRef: Payload | undefined
+
+  const webhooks: Array<{ adapterName: string; handler: SMSWebhookHandler }> = []
+  for (const [key, adapter] of Object.entries(providers)) {
+    if (adapter.webhook) {
+      webhooks.push({ adapterName: key, handler: adapter.webhook })
+    }
+  }
 
   return {
     name: 'router',
     defaultFrom: opts.defaultFrom,
+    webhooks,
     async init(payload: Payload): Promise<void> {
       payloadRef = payload
       for (const adapter of Object.values(providers)) {

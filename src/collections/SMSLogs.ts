@@ -30,11 +30,30 @@ export const buildSMSLogsCollection = (
       ],
     },
     { name: 'error', type: 'textarea' },
+    { name: 'errorCode', type: 'text' },
     { name: 'sentAt', type: 'date', required: true, index: true },
+    { name: 'deliveredAt', type: 'date', index: true },
+    { name: 'failedAt', type: 'date', index: true },
   ]
 
   if (options.includeContext) {
     baseFields.push({ name: 'context', type: 'json' })
+  }
+
+  if (options.statusHistory) {
+    baseFields.push({
+      name: 'statusHistory',
+      type: 'array',
+      fields: [
+        {
+          name: 'status',
+          type: 'select',
+          options: ['queued', 'sent', 'delivered', 'failed', 'unknown'],
+        },
+        { name: 'occurredAt', type: 'date' },
+        { name: 'errorCode', type: 'text' },
+      ],
+    })
   }
 
   return {

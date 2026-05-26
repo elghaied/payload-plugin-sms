@@ -284,9 +284,54 @@ try {
 }
 ```
 
+## Delivery-status webhooks
+
+Enable provider webhooks to keep `sms-logs` rows in sync with real delivery state.
+
+```ts
+import { smsPlugin } from 'payload-plugin-sms'
+import { twilioAdapter } from 'payload-plugin-sms/twilio'
+
+export default buildConfig({
+  // ...
+  plugins: [
+    smsPlugin({
+      adapter: twilioAdapter({
+        accountSid: process.env.TWILIO_ACCOUNT_SID!,
+        authToken: process.env.TWILIO_AUTH_TOKEN!,
+        defaultFrom: process.env.TWILIO_FROM,
+        webhook: { trustProxy: true }, // optional, if behind a proxy
+      }),
+      collections: { logs: { statusHistory: true } },
+      webhooks: { enabled: true },
+      onStatus: ({ event, log }) => {
+        // optional: notify your app on every status transition
+      },
+    }),
+  ],
+})
+```
+
+Webhook URLs (Payload prepends `/api`):
+
+| Provider | URL                              | Required adapter `webhook` opts                                                         |
+| -------- | -------------------------------- | --------------------------------------------------------------------------------------- |
+| Twilio   | `/api/sms/webhooks/twilio`       | (none — uses `authToken`)                                                               |
+| Telnyx   | `/api/sms/webhooks/telnyx`       | `publicKey` (Ed25519 PEM, from Telnyx portal)                                           |
+| Plivo    | `/api/sms/webhooks/plivo`        | (none — uses `authToken`)                                                               |
+| Vonage   | `/api/sms/webhooks/vonage`       | `signatureSecret`, `signatureMethod: 'sha256hash' \| 'sha512hash'`                      |
+| AWS SNS  | `/api/sms/webhooks/aws-sns`      | (none — verified via `SigningCertURL`; auto-confirms `SubscriptionConfirmation`)        |
+
+Notes:
+
+- Signature verification is **on by default**. Set `webhooks.verifySignature: false` only for local testing.
+- Status updates are gated by rank (`queued → sent → delivered`, with `failed` terminal), so out-of-order or duplicate webhooks are dropped silently.
+- Set `collections.logs.statusHistory: true` to keep an append-only history of every event.
+- Vonage plain MD5 signing is **not supported** (insecure). Use `sha256hash` or `sha512hash`.
+- Twilio and Plivo do not sign timestamps — those providers cannot prevent replay attacks at the signature layer.
+
 ## Roadmap
 
-- Delivery-status webhooks (Twilio, Telnyx, Plivo)
 - Bulk / batch send
 - Templating (variable substitution, localization)
 - Per-recipient rate limiting

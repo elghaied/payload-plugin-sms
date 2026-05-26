@@ -59,3 +59,20 @@ describe('vonageAdapter', () => {
     ).rejects.toBeInstanceOf(SMSProviderError)
   })
 })
+
+describe('vonageAdapter webhook construction', () => {
+  test('throws when signatureMethod is md5hash', async () => {
+    const { vonageAdapter } = await import('./index.js')
+    expect(() =>
+      vonageAdapter({
+        apiKey: 'k',
+        apiSecret: 's',
+        webhook: {
+          signatureSecret: 'shh',
+          // @ts-expect-error testing rejection of md5
+          signatureMethod: 'md5hash',
+        },
+      }),
+    ).toThrow(/md5/i)
+  })
+})
