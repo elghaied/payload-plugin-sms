@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { mockAdapter } from '../adapters/mock/index.js'
 import { SMSProviderError, SMSValidationError } from '../errors.js'
+import type { SMSAdapter, SMSWebhookHandler } from '../types.js'
 import { routerAdapter } from './index.js'
 
 const stubPayload = (): Payload =>
@@ -224,5 +225,64 @@ describe('routerAdapter', () => {
     await expect(
       r.send({ to: '+15551234567', from: '+15550000000', body: 'hi' }),
     ).rejects.toThrow(/payload not set/)
+  })
+})
+
+describe('routerAdapter exposes webhooks array', () => {
+  test('aggregates webhooks from children that have one', () => {
+    const wh: SMSWebhookHandler = {
+      verify: () => undefined,
+      parse: () => [],
+    }
+    const a: SMSAdapter = {
+      name: 'a',
+      send: async () => {
+        throw new Error('unused')
+      },
+      webhook: wh,
+    }
+    const b: SMSAdapter = {
+      name: 'b',
+      send: async () => {
+        throw new Error('unused')
+      },
+    }
+    const r = routerAdapter({
+      providers: { a, b },
+      route: () => 'a',
+    }) as { webhooks: Array<{ adapterName: string; handler: SMSWebhookHandler }> }
+    expect(r.webhooks).toHaveLength(1)
+    expect(r.webhooks[0].adapterName).toBe('a')
+    expect(r.webhooks[0].handler).toBe(wh)
+  })
+
+  test('mockAdapter child contributes 1 webhook', () => {
+    const r = routerAdapter({
+      providers: { m: mockAdapter() },
+      route: () => 'm',
+    }) as { webhooks: unknown[] }
+    expect(r.webhooks).toHaveLength(1)
+  })
+
+  test('child webhook.path override is preserved', () => {
+    const wh: SMSWebhookHandler = {
+      path: 'twilio-marketing',
+      verify: () => undefined,
+      parse: () => [],
+    }
+    const a: SMSAdapter = {
+      name: 'twilio',
+      send: async () => {
+        throw new Error('unused')
+      },
+      webhook: wh,
+    }
+    const r = routerAdapter({
+      providers: { 'a-key': a },
+      route: () => 'a-key',
+    }) as { webhooks: Array<{ adapterName: string; handler: SMSWebhookHandler }> }
+    expect(r.webhooks[0].handler.path).toBe('twilio-marketing')
+    // adapterName tracks the provider KEY so the plugin can route by it
+    expect(r.webhooks[0].adapterName).toBe('a-key')
   })
 })
