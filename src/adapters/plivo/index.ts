@@ -1,11 +1,16 @@
-import type { OutboundSMSMessage, SMSAdapter, SMSResult } from '../../types.js'
+import type { OutboundSMSMessage, SMSAdapter, SMSResult, SMSWebhookHandler } from '../../types.js'
 
 import { SMSProviderError } from '../../errors.js'
+import { makePlivoWebhook } from './webhook.js'
 
 export interface PlivoAdapterOptions {
   authId: string
   authToken: string
   defaultFrom?: string
+  webhook?: {
+    path?: string
+    trustProxy?: boolean
+  } | false
 }
 
 const loadPlivo = async (): Promise<{
@@ -25,9 +30,21 @@ const loadPlivo = async (): Promise<{
   }
 }
 
+const buildWebhook = (opts: PlivoAdapterOptions): SMSWebhookHandler | undefined => {
+  if (opts.webhook === false) return undefined
+  const baseHandler = makePlivoWebhook({
+    authToken: opts.authToken,
+    trustProxy: opts.webhook?.trustProxy,
+  })
+  return opts.webhook?.path
+    ? { ...baseHandler, path: opts.webhook.path }
+    : baseHandler
+}
+
 export const plivoAdapter = (opts: PlivoAdapterOptions): SMSAdapter => ({
   name: 'plivo',
   defaultFrom: opts.defaultFrom,
+  webhook: buildWebhook(opts),
   async send(message: OutboundSMSMessage): Promise<SMSResult> {
     const plivo = await loadPlivo()
     const client = new plivo.Client(opts.authId, opts.authToken)
