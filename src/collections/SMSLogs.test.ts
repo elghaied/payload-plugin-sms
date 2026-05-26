@@ -46,4 +46,17 @@ describe('buildSMSLogsCollection', () => {
       ['body', 'cost', 'error', 'from', 'provider', 'providerMessageId', 'sentAt', 'status', 'to'].sort(),
     )
   })
+
+  test('does not include context field by default', () => {
+    const c = buildSMSLogsCollection(true)
+    const names = c.fields.map((f) => ('name' in f ? f.name : ''))
+    expect(names).not.toContain('context')
+  })
+
+  test('includes context (json) field when includeContext is true', () => {
+    const c = buildSMSLogsCollection({ includeContext: true })
+    const field = c.fields.find((f) => 'name' in f && f.name === 'context')
+    expect(field).toBeDefined()
+    expect(field && 'type' in field && field.type).toBe('json')
+  })
 })
