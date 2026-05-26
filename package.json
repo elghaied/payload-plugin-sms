@@ -1,6 +1,6 @@
 {
-  "name": "payload-plugin-sms",
-  "version": "0.2.0",
+  "name": "@elghaied/payload-plugin-sms",
+  "version": "0.3.0",
   "description": "Multi-provider SMS plugin for Payload CMS 3.x with Twilio, Telnyx, Plivo, Vonage, and AWS SNS adapters.",
   "license": "MIT",
   "type": "module",
@@ -157,6 +157,8 @@
     "pnpm": "^9 || ^10"
   },
   "publishConfig": {
+    "access": "public",
+    "registry": "https://npm.pkg.github.com",
     "exports": {
       ".": {
         "import": "./dist/index.js",
@@ -214,6 +216,5 @@
       "unrs-resolver"
     ]
   },
-  "registry": "https://registry.npmjs.org/",
   "dependencies": {}
 }

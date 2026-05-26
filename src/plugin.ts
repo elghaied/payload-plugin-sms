@@ -68,7 +68,7 @@ export const smsPlugin =
           ...(config.admin.dashboard?.widgets ?? []),
           {
             slug: 'sms-recent-logs',
-            Component: 'payload-plugin-sms/rsc#SMSLogsWidget',
+            Component: '@elghaied/payload-plugin-sms/rsc#SMSLogsWidget',
             minWidth: 'small',
             maxWidth: 'medium',
           },

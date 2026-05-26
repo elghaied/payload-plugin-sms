@@ -2,9 +2,9 @@ import type { Payload } from 'payload'
 
 import config from '@payload-config'
 import { createPayloadRequest, getPayload } from 'payload'
-import { SMSValidationError, SMSWebhookVerificationError } from 'payload-plugin-sms'
-import { routerAdapter, byTenantLookup } from 'payload-plugin-sms/router'
-import { mockAdapter } from 'payload-plugin-sms/mock'
+import { SMSValidationError, SMSWebhookVerificationError } from '@elghaied/payload-plugin-sms'
+import { routerAdapter, byTenantLookup } from '@elghaied/payload-plugin-sms/router'
+import { mockAdapter } from '@elghaied/payload-plugin-sms/mock'
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
 import { testSmsEndpoint } from './endpoints/testSms.js'

@@ -19,13 +19,13 @@
       "@payload-config": [
         "./payload.config.ts"
       ],
-      "payload-plugin-sms": [
+      "@elghaied/payload-plugin-sms": [
         "../src/index.ts"
       ],
-      "payload-plugin-sms/client": [
+      "@elghaied/payload-plugin-sms/client": [
         "../src/exports/client.ts"
       ],
-      "payload-plugin-sms/rsc": [
+      "@elghaied/payload-plugin-sms/rsc": [
         "../src/exports/rsc.ts"
       ]
     },

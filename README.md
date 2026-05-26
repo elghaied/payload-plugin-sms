@@ -1,4 +1,4 @@
-# payload-plugin-sms
+# @elghaied/payload-plugin-sms
 
 Multi-provider SMS plugin for [Payload CMS](https://payloadcms.com) 3.x. Send SMS through Twilio, Telnyx, Plivo, Vonage, or AWS SNS — and call `payload.sendSMS(...)` from anywhere.
 
@@ -6,9 +6,19 @@ Architecture mirrors `@payloadcms/email-nodemailer`: a thin core defines an adap
 
 ## Install
 
-```bash
-pnpm add payload-plugin-sms
+Published to the GitHub Packages npm registry. Tell npm/pnpm where to find the `@elghaied` scope by adding to your project's `.npmrc`:
+
+```ini
+@elghaied:registry=https://npm.pkg.github.com
 ```
+
+Then install:
+
+```bash
+pnpm add @elghaied/payload-plugin-sms
+```
+
+> Installing requires a personal access token with `read:packages` scope, configured as `//npm.pkg.github.com/:_authToken=...` in your `~/.npmrc`. See the [GitHub Packages docs](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry#authenticating-to-github-packages).
 
 Then install the SDK for your chosen provider:
 
@@ -24,8 +34,8 @@ pnpm add @aws-sdk/client-sns     # AWS SNS
 
 ```ts
 import { buildConfig } from 'payload'
-import { smsPlugin } from 'payload-plugin-sms'
-import { twilioAdapter } from 'payload-plugin-sms/twilio'
+import { smsPlugin } from '@elghaied/payload-plugin-sms'
+import { twilioAdapter } from '@elghaied/payload-plugin-sms/twilio'
 
 export default buildConfig({
   plugins: [
@@ -73,7 +83,7 @@ export const Users: CollectionConfig = {
 ### Twilio
 
 ```ts
-import { twilioAdapter } from 'payload-plugin-sms/twilio'
+import { twilioAdapter } from '@elghaied/payload-plugin-sms/twilio'
 
 twilioAdapter({
   accountSid: '...',
@@ -86,7 +96,7 @@ twilioAdapter({
 ### Telnyx
 
 ```ts
-import { telnyxAdapter } from 'payload-plugin-sms/telnyx'
+import { telnyxAdapter } from '@elghaied/payload-plugin-sms/telnyx'
 
 telnyxAdapter({
   apiKey: '...',
@@ -98,7 +108,7 @@ telnyxAdapter({
 ### Plivo
 
 ```ts
-import { plivoAdapter } from 'payload-plugin-sms/plivo'
+import { plivoAdapter } from '@elghaied/payload-plugin-sms/plivo'
 
 plivoAdapter({
   authId: '...',
@@ -112,7 +122,7 @@ plivoAdapter({
 Uses the legacy SMS API (key + secret). The Messages API (JWT-authenticated) is on the roadmap.
 
 ```ts
-import { vonageAdapter } from 'payload-plugin-sms/vonage'
+import { vonageAdapter } from '@elghaied/payload-plugin-sms/vonage'
 
 vonageAdapter({
   apiKey: '...',
@@ -126,7 +136,7 @@ vonageAdapter({
 SNS has no per-message `from`. `defaultFrom` is sent as the `AWS.SNS.SMS.SenderID` attribute (region-dependent support).
 
 ```ts
-import { awsSnsAdapter } from 'payload-plugin-sms/aws-sns'
+import { awsSnsAdapter } from '@elghaied/payload-plugin-sms/aws-sns'
 
 awsSnsAdapter({
   region: 'us-east-1',
@@ -142,7 +152,7 @@ awsSnsAdapter({
 ### Mock (tests)
 
 ```ts
-import { mockAdapter } from 'payload-plugin-sms/mock'
+import { mockAdapter } from '@elghaied/payload-plugin-sms/mock'
 
 const adapter = mockAdapter({ defaultFrom: '+15550000000' })
 adapter.messages  // array of sent messages
@@ -198,10 +208,10 @@ Disable with `widgets: false`.
 For multi-tenant SaaS or geo-routing, wrap multiple adapters in a `routerAdapter` and decide per-send which one handles the message.
 
 ```ts
-import { smsPlugin } from 'payload-plugin-sms'
-import { twilioAdapter } from 'payload-plugin-sms/twilio'
-import { telnyxAdapter } from 'payload-plugin-sms/telnyx'
-import { routerAdapter, byTenantLookup } from 'payload-plugin-sms/router'
+import { smsPlugin } from '@elghaied/payload-plugin-sms'
+import { twilioAdapter } from '@elghaied/payload-plugin-sms/twilio'
+import { telnyxAdapter } from '@elghaied/payload-plugin-sms/telnyx'
+import { routerAdapter, byTenantLookup } from '@elghaied/payload-plugin-sms/router'
 
 smsPlugin({
   adapter: routerAdapter({
@@ -271,7 +281,7 @@ Hook failures are logged but do not affect the SMS send result. `req` is `undefi
 ## Errors
 
 ```ts
-import { SMSValidationError, SMSProviderError } from 'payload-plugin-sms'
+import { SMSValidationError, SMSProviderError } from '@elghaied/payload-plugin-sms'
 
 try {
   await payload.sendSMS({ to: 'not-e164', body: 'hi' })
@@ -289,8 +299,8 @@ try {
 Enable provider webhooks to keep `sms-logs` rows in sync with real delivery state.
 
 ```ts
-import { smsPlugin } from 'payload-plugin-sms'
-import { twilioAdapter } from 'payload-plugin-sms/twilio'
+import { smsPlugin } from '@elghaied/payload-plugin-sms'
+import { twilioAdapter } from '@elghaied/payload-plugin-sms/twilio'
 
 export default buildConfig({
   // ...
@@ -346,7 +356,7 @@ PRs welcome.
 - Payload `^3.0.0` (tested against `3.84.1`)
 - Next.js `^16.0.0`
 - Node `^18.20.2 || >=20.9.0`
-- React 19 is an optional peer dependency — required only if you use the dashboard widget (`payload-plugin-sms/rsc`).
+- React 19 is an optional peer dependency — required only if you use the dashboard widget (`@elghaied/payload-plugin-sms/rsc`).
 
 ## License
 
