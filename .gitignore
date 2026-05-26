@@ -48,3 +48,6 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Superpowers spec/plan docs — kept locally, not shared
+/docs/superpowers/
