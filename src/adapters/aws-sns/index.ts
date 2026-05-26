@@ -1,4 +1,4 @@
-import type { SMSAdapter, SMSMessage, SMSResult } from '../../types.js'
+import type { OutboundSMSMessage, SMSAdapter, SMSResult } from '../../types.js'
 
 import { SMSProviderError } from '../../errors.js'
 
@@ -30,7 +30,7 @@ const loadSns = async (): Promise<{
 export const awsSnsAdapter = (opts: AwsSnsAdapterOptions): SMSAdapter => ({
   name: 'aws-sns',
   defaultFrom: opts.defaultFrom,
-  async send(message: SMSMessage): Promise<SMSResult> {
+  async send(message: OutboundSMSMessage): Promise<SMSResult> {
     const { SNSClient, PublishCommand } = await loadSns()
     const client = new SNSClient({
       region: opts.region,

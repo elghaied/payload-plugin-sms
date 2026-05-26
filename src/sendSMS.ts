@@ -1,6 +1,6 @@
 import type { Payload } from 'payload'
 
-import type { SMSMessage, SMSPluginConfig, SMSResult } from './types.js'
+import type { OutboundSMSMessage, SMSMessage, SMSPluginConfig, SMSResult } from './types.js'
 
 import { SMSProviderError, SMSValidationError } from './errors.js'
 
@@ -33,7 +33,7 @@ export const makeSendSMS =
       )
     }
 
-    const outbound: SMSMessage = { ...message, from }
+    const outbound: OutboundSMSMessage = { ...message, from }
 
     let result: SMSResult
     try {

@@ -27,7 +27,7 @@ describe('smsPlugin', () => {
     const result = smsPlugin({
       adapter: mockAdapter({ defaultFrom: '+15550000000' }),
       collections: { logs: true },
-    })(baseConfig())
+    })(baseConfig()) as Config
     const slugs = (result.collections ?? []).map((c) => c.slug)
     expect(slugs).toContain('sms-logs')
   })
@@ -35,7 +35,7 @@ describe('smsPlugin', () => {
   test('does not add sms-logs collection when logs disabled', () => {
     const result = smsPlugin({
       adapter: mockAdapter({ defaultFrom: '+15550000000' }),
-    })(baseConfig())
+    })(baseConfig()) as Config
     const slugs = (result.collections ?? []).map((c) => c.slug)
     expect(slugs).not.toContain('sms-logs')
   })
@@ -44,7 +44,7 @@ describe('smsPlugin', () => {
     const result = smsPlugin({
       adapter: mockAdapter({ defaultFrom: '+15550000000' }),
       collections: { logs: { slug: 'audit-sms' } },
-    })(baseConfig())
+    })(baseConfig()) as Config
     const slugs = (result.collections ?? []).map((c) => c.slug)
     expect(slugs).toContain('audit-sms')
   })
@@ -54,7 +54,7 @@ describe('smsPlugin', () => {
       adapter: mockAdapter({ defaultFrom: '+15550000000' }),
       collections: { logs: true },
       widgets: true,
-    })(baseConfig())
+    })(baseConfig()) as Config
     const widgets = result.admin?.dashboard?.widgets ?? []
     expect(widgets.some((w) => w.slug === 'sms-recent-logs')).toBe(true)
   })
@@ -64,7 +64,7 @@ describe('smsPlugin', () => {
       adapter: mockAdapter({ defaultFrom: '+15550000000' }),
       collections: { logs: true },
       widgets: false,
-    })(baseConfig())
+    })(baseConfig()) as Config
     const widgets = result.admin?.dashboard?.widgets ?? []
     expect(widgets.find((w) => w.slug === 'sms-recent-logs')).toBeUndefined()
   })
@@ -73,7 +73,7 @@ describe('smsPlugin', () => {
     const result = smsPlugin({
       adapter: mockAdapter({ defaultFrom: '+15550000000' }),
       widgets: true,
-    })(baseConfig())
+    })(baseConfig()) as Config
     const widgets = result.admin?.dashboard?.widgets ?? []
     expect(widgets.find((w) => w.slug === 'sms-recent-logs')).toBeUndefined()
   })
@@ -81,7 +81,7 @@ describe('smsPlugin', () => {
   test('attaches sendSMS to payload via onInit', async () => {
     const result = smsPlugin({
       adapter: mockAdapter({ defaultFrom: '+15550000000' }),
-    })(baseConfig())
+    })(baseConfig()) as Config
     const payload = await runOnInit(result)
     expect(typeof (payload as unknown as { sendSMS: unknown }).sendSMS).toBe('function')
 
@@ -99,13 +99,13 @@ describe('smsPlugin', () => {
     config.onInit = existing
     const result = smsPlugin({
       adapter: mockAdapter({ defaultFrom: '+15550000000' }),
-    })(config)
+    })(config) as Config
     await runOnInit(result)
     expect(existing).toHaveBeenCalledTimes(1)
   })
 
   test('warns at onInit when no adapter configured', async () => {
-    const result = smsPlugin({})(baseConfig())
+    const result = smsPlugin({})(baseConfig()) as Config
     const payload = await runOnInit(result)
     expect(payload.logger.warn).toHaveBeenCalled()
   })
@@ -116,7 +116,7 @@ describe('smsPlugin', () => {
       adapter: mockAdapter({ defaultFrom: '+15550000000' }),
       disabled: true,
       collections: { logs: true },
-    })(config)
+    })(config) as Config
     expect((result.collections ?? []).find((c) => c.slug === 'sms-logs')).toBeUndefined()
     const payload = await runOnInit(result)
     expect(payload.logger.warn).toHaveBeenCalled()

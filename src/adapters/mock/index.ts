@@ -1,4 +1,4 @@
-import type { SMSAdapter, SMSMessage, SMSResult, SMSStatus } from '../../types.js'
+import type { OutboundSMSMessage, SMSAdapter, SMSMessage, SMSResult, SMSStatus } from '../../types.js'
 
 import { SMSProviderError } from '../../errors.js'
 
@@ -23,19 +23,18 @@ export const mockAdapter = (opts: MockAdapterOptions = {}): MockAdapter => {
     reset() {
       messages.length = 0
     },
-    async send(message: SMSMessage): Promise<SMSResult> {
+    async send(message: OutboundSMSMessage): Promise<SMSResult> {
       if (opts.fail) {
         throw new SMSProviderError('mock failure')
       }
       const sentAt = new Date()
       messages.push({ ...message, sentAt })
-      const from = message.from ?? opts.defaultFrom ?? ''
       return {
         id: `mock-${messages.length}`,
         provider: 'mock',
         status: opts.status ?? 'sent',
         to: message.to,
-        from,
+        from: message.from,
         body: message.body,
         raw: { ...message },
         sentAt,

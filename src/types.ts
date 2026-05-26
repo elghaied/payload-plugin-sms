@@ -9,6 +9,11 @@ export interface SMSMessage {
   mediaUrls?: string[]
 }
 
+/** Internal — passed to adapter.send after `from` is resolved by sendSMS. */
+export interface OutboundSMSMessage extends Omit<SMSMessage, 'from'> {
+  from: string
+}
+
 export interface SMSCost {
   amount: string
   currency: string
@@ -29,7 +34,7 @@ export interface SMSResult {
 export interface SMSAdapter {
   name: string
   defaultFrom?: string
-  send: (message: SMSMessage) => Promise<SMSResult>
+  send: (message: OutboundSMSMessage) => Promise<SMSResult>
 }
 
 export interface SMSLogsCollectionOptions {

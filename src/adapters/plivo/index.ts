@@ -1,4 +1,4 @@
-import type { SMSAdapter, SMSMessage, SMSResult } from '../../types.js'
+import type { OutboundSMSMessage, SMSAdapter, SMSResult } from '../../types.js'
 
 import { SMSProviderError } from '../../errors.js'
 
@@ -28,7 +28,7 @@ const loadPlivo = async (): Promise<{
 export const plivoAdapter = (opts: PlivoAdapterOptions): SMSAdapter => ({
   name: 'plivo',
   defaultFrom: opts.defaultFrom,
-  async send(message: SMSMessage): Promise<SMSResult> {
+  async send(message: OutboundSMSMessage): Promise<SMSResult> {
     const plivo = await loadPlivo()
     const client = new plivo.Client(opts.authId, opts.authToken)
 

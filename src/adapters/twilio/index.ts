@@ -1,6 +1,6 @@
 import type {
+  OutboundSMSMessage,
   SMSAdapter,
-  SMSMessage,
   SMSResult,
   SMSStatus,
 } from '../../types.js'
@@ -43,7 +43,7 @@ const loadTwilio = async (): Promise<(sid: string, token: string) => unknown> =>
 export const twilioAdapter = (opts: TwilioAdapterOptions): SMSAdapter => ({
   name: 'twilio',
   defaultFrom: opts.defaultFrom,
-  async send(message: SMSMessage): Promise<SMSResult> {
+  async send(message: OutboundSMSMessage): Promise<SMSResult> {
     const twilio = await loadTwilio()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = twilio(opts.accountSid, opts.authToken) as any

@@ -1,4 +1,4 @@
-import type { SMSAdapter, SMSMessage, SMSResult } from '../../types.js'
+import type { OutboundSMSMessage, SMSAdapter, SMSResult } from '../../types.js'
 
 import { SMSProviderError } from '../../errors.js'
 
@@ -29,7 +29,7 @@ const stripPlus = (n: string): string => n.replace(/^\+/, '')
 export const vonageAdapter = (opts: VonageAdapterOptions): SMSAdapter => ({
   name: 'vonage',
   defaultFrom: opts.defaultFrom,
-  async send(message: SMSMessage): Promise<SMSResult> {
+  async send(message: OutboundSMSMessage): Promise<SMSResult> {
     const { Vonage } = await loadVonage()
     const client = new Vonage({ apiKey: opts.apiKey, apiSecret: opts.apiSecret })
 

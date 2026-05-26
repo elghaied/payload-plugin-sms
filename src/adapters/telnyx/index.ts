@@ -1,6 +1,6 @@
 import type {
+  OutboundSMSMessage,
   SMSAdapter,
-  SMSMessage,
   SMSResult,
   SMSStatus,
 } from '../../types.js'
@@ -44,7 +44,7 @@ const loadTelnyx = async (): Promise<new (opts: { apiKey: string }) => any> => {
 export const telnyxAdapter = (opts: TelnyxAdapterOptions): SMSAdapter => ({
   name: 'telnyx',
   defaultFrom: opts.defaultFrom,
-  async send(message: SMSMessage): Promise<SMSResult> {
+  async send(message: OutboundSMSMessage): Promise<SMSResult> {
     const Telnyx = await loadTelnyx()
     const client = new Telnyx({ apiKey: opts.apiKey })
 
