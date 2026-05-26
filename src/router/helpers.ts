@@ -64,3 +64,24 @@ export const byTenantLookup = (opts: ByTenantLookupOptions): RouteFunction => {
     return raw
   }
 }
+
+export interface ByCountryPrefixOptions {
+  fallback?: ProviderName
+}
+
+export const byCountryPrefix = (
+  map: Record<string, ProviderName>,
+  opts: ByCountryPrefixOptions = {},
+): RouteFunction => {
+  const entries = Object.entries(map).sort((a, b) => b[0].length - a[0].length)
+
+  return async ({ message }) => {
+    for (const [prefix, name] of entries) {
+      if (message.to.startsWith(prefix)) return name
+    }
+    if (opts.fallback) return opts.fallback
+    throw new SMSProviderError(
+      `byCountryPrefix: no prefix matched ${JSON.stringify(message.to)} and no fallback provided`,
+    )
+  }
+}

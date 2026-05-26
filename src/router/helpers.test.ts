@@ -4,7 +4,7 @@ import { describe, expect, test, vi } from 'vitest'
 
 import { mockAdapter } from '../adapters/mock/index.js'
 import { SMSProviderError } from '../errors.js'
-import { byTenantLookup } from './helpers.js'
+import { byCountryPrefix, byTenantLookup } from './helpers.js'
 import type { RouteArgs } from './types.js'
 
 const stubPayload = (
@@ -107,5 +107,35 @@ describe('byTenantLookup', () => {
     await expect(
       route(buildArgs(payload, { tenantId: 'missing' })),
     ).rejects.toBeInstanceOf(SMSProviderError)
+  })
+})
+
+const argsWithTo = (to: string): RouteArgs => ({
+  message: { to, from: '+15550000000', body: 'hi' },
+  providers: { twilio: mockAdapter(), telnyx: mockAdapter() },
+  payload: {} as Payload,
+})
+
+describe('byCountryPrefix', () => {
+  test('matches a single prefix', async () => {
+    const route = byCountryPrefix({ '+1': 'twilio', '+33': 'telnyx' })
+    expect(await route(argsWithTo('+15551234567'))).toBe('twilio')
+    expect(await route(argsWithTo('+33123456789'))).toBe('telnyx')
+  })
+
+  test('longest-prefix match wins', async () => {
+    const route = byCountryPrefix({ '+1': 'twilio', '+1242': 'telnyx' })
+    expect(await route(argsWithTo('+12025550100'))).toBe('twilio')
+    expect(await route(argsWithTo('+12421234567'))).toBe('telnyx')
+  })
+
+  test('uses fallback when no prefix matches', async () => {
+    const route = byCountryPrefix({ '+33': 'telnyx' }, { fallback: 'twilio' })
+    expect(await route(argsWithTo('+15551234567'))).toBe('twilio')
+  })
+
+  test('throws SMSProviderError when no match and no fallback', async () => {
+    const route = byCountryPrefix({ '+33': 'telnyx' })
+    await expect(route(argsWithTo('+15551234567'))).rejects.toBeInstanceOf(SMSProviderError)
   })
 })
