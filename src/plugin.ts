@@ -12,6 +12,13 @@ const resolveLogsSlug = (
   return 'sms-logs'
 }
 
+const resolveLogsIncludeContext = (
+  logs: boolean | SMSLogsCollectionOptions | undefined,
+): boolean =>
+  typeof logs === 'object' && logs !== null
+    ? Boolean(logs.includeContext)
+    : false
+
 export const smsPlugin =
   (pluginConfig: SMSPluginConfig): Plugin =>
   (config: Config): Config => {
@@ -26,6 +33,7 @@ export const smsPlugin =
 
     const logsEnabled = Boolean(pluginConfig.collections?.logs)
     const logsSlug = resolveLogsSlug(pluginConfig.collections?.logs)
+    const logsIncludeContext = resolveLogsIncludeContext(pluginConfig.collections?.logs)
 
     if (logsEnabled) {
       config.collections = [
@@ -59,6 +67,8 @@ export const smsPlugin =
         payload.logger.warn(
           'payload-plugin-sms: no adapter configured; payload.sendSMS will throw',
         )
+      } else if (pluginConfig.adapter.init) {
+        await pluginConfig.adapter.init(payload)
       }
       if (customLogsSlug && pluginConfig.widgets !== false && pluginConfig.widgets !== undefined) {
         payload.logger.warn(
@@ -69,6 +79,7 @@ export const smsPlugin =
         payload,
         pluginConfig,
         logsSlug: logsEnabled ? logsSlug : undefined,
+        logsIncludeContext: logsEnabled ? logsIncludeContext : undefined,
       })
     }
 

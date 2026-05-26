@@ -131,4 +131,31 @@ describe('smsPlugin', () => {
     const payload = await runOnInit(result)
     expect(payload.logger.warn).toHaveBeenCalled()
   })
+
+  test('passes logsIncludeContext through to sendSMS when collection.logs.includeContext is true', async () => {
+    const result = smsPlugin({
+      adapter: mockAdapter({ defaultFrom: '+15550000000' }),
+      collections: { logs: { includeContext: true } },
+    })(baseConfig()) as Config
+    const payload = await runOnInit(result)
+    await (payload as unknown as {
+      sendSMS: (m: { to: string; body: string; context?: Record<string, unknown> }) => Promise<unknown>
+    }).sendSMS({
+      to: '+15551234567',
+      body: 'hi',
+      context: { tenantId: 'acme' },
+    })
+    const call = (payload.create as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(call.data.context).toEqual({ tenantId: 'acme' })
+  })
+
+  test('calls adapter.init with payload at onInit when defined', async () => {
+    const init = vi.fn()
+    const adapter = mockAdapter({ defaultFrom: '+15550000000' })
+    ;(adapter as unknown as { init: typeof init }).init = init
+    const result = smsPlugin({ adapter })(baseConfig()) as Config
+    const payload = await runOnInit(result)
+    expect(init).toHaveBeenCalledTimes(1)
+    expect(init).toHaveBeenCalledWith(payload)
+  })
 })
