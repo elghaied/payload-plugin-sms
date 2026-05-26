@@ -30,11 +30,11 @@ describe('telnyxAdapter', () => {
       data: { id: 'msg-1', to: [{ status: 'queued' }] },
     })
     const a = telnyxAdapter({ apiKey: 'k' })
-    const r = await a.send({ to: '+15551234567', from: '+15550000000', body: 'hi' })
+    const r = await a.send({ body: 'hi', from: '+15550000000', to: '+15551234567' })
     expect(messagesSend).toHaveBeenCalledWith({
-      to: '+15551234567',
       from: '+15550000000',
       text: 'hi',
+      to: '+15551234567',
     })
     expect(r.id).toBe('msg-1')
     expect(r.provider).toBe('telnyx')
@@ -45,10 +45,10 @@ describe('telnyxAdapter', () => {
     messagesSend.mockResolvedValue({ data: { id: 'm', to: [{ status: 'queued' }] } })
     const a = telnyxAdapter({ apiKey: 'k' })
     await a.send({
-      to: '+15551234567',
-      from: '+15550000000',
       body: 'hi',
+      from: '+15550000000',
       mediaUrls: ['https://x/a.png'],
+      to: '+15551234567',
     })
     expect(messagesSend.mock.calls[0][0].media_urls).toEqual(['https://x/a.png'])
   })
@@ -56,7 +56,7 @@ describe('telnyxAdapter', () => {
   test('passes messaging_profile_id when configured', async () => {
     messagesSend.mockResolvedValue({ data: { id: 'm', to: [{ status: 'queued' }] } })
     const a = telnyxAdapter({ apiKey: 'k', messagingProfileId: 'mp-1' })
-    await a.send({ to: '+15551234567', from: '+15550000000', body: 'hi' })
+    await a.send({ body: 'hi', from: '+15550000000', to: '+15551234567' })
     expect(messagesSend.mock.calls[0][0].messaging_profile_id).toBe('mp-1')
   })
 
@@ -73,7 +73,7 @@ describe('telnyxAdapter', () => {
     for (const [tStatus, ours] of cases) {
       messagesSend.mockResolvedValueOnce({ data: { id: 'm', to: [{ status: tStatus }] } })
       const a = telnyxAdapter({ apiKey: 'k' })
-      const r = await a.send({ to: '+15551234567', from: '+15550000000', body: 'x' })
+      const r = await a.send({ body: 'x', from: '+15550000000', to: '+15551234567' })
       expect(r.status).toBe(ours)
     }
   })
@@ -81,7 +81,7 @@ describe('telnyxAdapter', () => {
   test('defaults to "queued" when status not present', async () => {
     messagesSend.mockResolvedValue({ data: { id: 'm' } })
     const a = telnyxAdapter({ apiKey: 'k' })
-    const r = await a.send({ to: '+15551234567', from: '+15550000000', body: 'x' })
+    const r = await a.send({ body: 'x', from: '+15550000000', to: '+15551234567' })
     expect(r.status).toBe('queued')
   })
 
@@ -89,7 +89,7 @@ describe('telnyxAdapter', () => {
     messagesSend.mockRejectedValue(new Error('telnyx boom'))
     const a = telnyxAdapter({ apiKey: 'k' })
     await expect(
-      a.send({ to: '+15551234567', from: '+15550000000', body: 'x' }),
+      a.send({ body: 'x', from: '+15550000000', to: '+15551234567' }),
     ).rejects.toBeInstanceOf(SMSProviderError)
   })
 })

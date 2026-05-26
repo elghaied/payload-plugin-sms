@@ -82,7 +82,7 @@ describe('SMSLogs schema additions for webhooks', () => {
     expect(names).toContain('statusHistory')
     const history = c.fields.find(
       (f) => 'name' in f && f.name === 'statusHistory',
-    ) as { type: string; fields: Array<{ name: string }> }
+    ) as { fields: Array<{ name: string }>; type: string }
     expect(history.type).toBe('array')
     expect(history.fields.map((f) => f.name).sort()).toEqual(
       ['errorCode', 'occurredAt', 'status'].sort(),

@@ -6,6 +6,6 @@ export const withFailover = (
 ): RouteFunction =>
   async (args) => {
     const raw = await inner(args)
-    if (Array.isArray(raw)) return raw
+    if (Array.isArray(raw)) {return raw}
     return [raw, ...fallbackOrder.filter((p) => p !== raw)]
   }

@@ -5,45 +5,45 @@ import type { SMSPluginConfig, SMSStatus, SMSStatusEvent } from '../types.js'
 import { shouldUpdate } from './rank.js'
 
 export interface ApplyStatusEventDeps {
-  payload: Payload
-  logsSlug: string | undefined
   adapterName: string
   event: SMSStatusEvent
+  logsIncludeStatusHistory: boolean
+  logsSlug: string | undefined
+  payload: Payload
   pluginConfig: SMSPluginConfig
   req: PayloadRequest
-  logsIncludeStatusHistory: boolean
 }
 
 export const applyStatusEvent = async (
   deps: ApplyStatusEventDeps,
 ): Promise<void> => {
-  const { payload, logsSlug, adapterName, event, pluginConfig, req } = deps
+  const { adapterName, event, logsSlug, payload, pluginConfig, req } = deps
 
-  let log: Record<string, unknown> | null = null
+  let log: null | Record<string, unknown> = null
 
   if (logsSlug) {
     try {
       const { docs } = await payload.find({
         collection: logsSlug,
-        where: {
-          providerMessageId: { equals: event.providerMessageId },
-          provider: { equals: adapterName },
-        },
         limit: 1,
+        where: {
+          provider: { equals: adapterName },
+          providerMessageId: { equals: event.providerMessageId },
+        },
       })
       log = (docs[0] as Record<string, unknown>) ?? null
     } catch (err) {
       payload.logger.warn({
-        msg: 'payload-plugin-sms webhook: log lookup failed',
         err,
+        msg: 'payload-plugin-sms webhook: log lookup failed',
       })
     }
 
     if (!log) {
       payload.logger.warn({
+        adapter: adapterName,
         msg: 'payload-plugin-sms webhook: no matching log row',
         providerMessageId: event.providerMessageId,
-        adapter: adapterName,
       })
     } else {
       const currentStatus = (log.status as SMSStatus | undefined) ?? 'unknown'
@@ -53,11 +53,11 @@ export const applyStatusEvent = async (
 
       if (rankAdvance) {
         data.status = event.status
-        if (event.status === 'delivered') data.deliveredAt = event.occurredAt
-        if (event.status === 'failed') data.failedAt = event.occurredAt
-        if (event.errorCode !== undefined) data.errorCode = event.errorCode
-        if (event.errorMessage !== undefined) data.error = event.errorMessage
-        if (event.cost && !log.cost) data.cost = event.cost
+        if (event.status === 'delivered') {data.deliveredAt = event.occurredAt}
+        if (event.status === 'failed') {data.failedAt = event.occurredAt}
+        if (event.errorCode !== undefined) {data.errorCode = event.errorCode}
+        if (event.errorMessage !== undefined) {data.error = event.errorMessage}
+        if (event.cost && !log.cost) {data.cost = event.cost}
       }
 
       if (deps.logsIncludeStatusHistory) {
@@ -67,9 +67,9 @@ export const applyStatusEvent = async (
         data.statusHistory = [
           ...existing,
           {
-            status: event.status,
-            occurredAt: event.occurredAt,
             errorCode: event.errorCode,
+            occurredAt: event.occurredAt,
+            status: event.status,
           },
         ]
       }
@@ -77,15 +77,15 @@ export const applyStatusEvent = async (
       if (Object.keys(data).length > 0) {
         try {
           const updated = await payload.update({
-            collection: logsSlug,
             id: log.id as string,
+            collection: logsSlug,
             data,
           })
           log = updated as unknown as Record<string, unknown>
         } catch (err) {
           payload.logger.warn({
-            msg: 'payload-plugin-sms webhook: log update failed',
             err,
+            msg: 'payload-plugin-sms webhook: log update failed',
           })
         }
       }
@@ -97,8 +97,8 @@ export const applyStatusEvent = async (
       await pluginConfig.onStatus({ event, log, req })
     } catch (err) {
       payload.logger.warn({
-        msg: 'payload-plugin-sms onStatus hook failed',
         err,
+        msg: 'payload-plugin-sms onStatus hook failed',
       })
     }
   }

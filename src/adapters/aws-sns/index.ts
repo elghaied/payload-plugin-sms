@@ -39,16 +39,16 @@ const loadSns = async (): Promise<{
 }
 
 const buildWebhook = (opts: AwsSnsAdapterOptions): SMSWebhookHandler | undefined => {
-  if (opts.webhook === false) return undefined
+  if (opts.webhook === false) {return undefined}
   const baseHandler = makeAwsSnsWebhook({ region: opts.region })
   return opts.webhook?.path ? { ...baseHandler, path: opts.webhook.path } : baseHandler
 }
 
 export const awsSnsAdapter = (opts: AwsSnsAdapterOptions): SMSAdapter => ({
-  defaultFrom: opts.defaultFrom,
   name: 'aws-sns',
+  defaultFrom: opts.defaultFrom,
   async send(message: OutboundSMSMessage): Promise<SMSResult> {
-    const { SNSClient, PublishCommand } = await loadSns()
+    const { PublishCommand, SNSClient } = await loadSns()
     const client = new SNSClient({
       region: opts.region,
       ...(opts.credentials ? { credentials: opts.credentials } : {}),
@@ -76,9 +76,9 @@ export const awsSnsAdapter = (opts: AwsSnsAdapterOptions): SMSAdapter => ({
         }),
       )
       return {
+        id: String(response.MessageId ?? ''),
         body: message.body,
         from: message.from,
-        id: String(response.MessageId ?? ''),
         provider: 'aws-sns',
         raw: response,
         sentAt: new Date(),

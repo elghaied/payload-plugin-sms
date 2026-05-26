@@ -15,8 +15,8 @@ const isRouted = (a: SMSAdapter): a is RoutedSMSAdapter =>
 export const collectWebhookHandlers = (
   adapter: SMSAdapter | undefined,
 ): WebhookHandlerEntry[] => {
-  if (!adapter) return []
-  if (isRouted(adapter)) return adapter.webhooks
+  if (!adapter) {return []}
+  if (isRouted(adapter)) {return adapter.webhooks}
   if (adapter.webhook) {
     return [{ adapterName: adapter.name, handler: adapter.webhook }]
   }

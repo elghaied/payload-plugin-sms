@@ -1,11 +1,10 @@
+import type { PayloadRequest } from 'payload'
+
 import { execFileSync } from 'node:child_process'
 import { createPrivateKey, createSign } from 'node:crypto'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-
-import type { PayloadRequest } from 'payload'
-
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { SMSWebhookVerificationError } from '../../errors.js'
@@ -47,14 +46,14 @@ beforeAll(() => {
 })
 
 afterAll(() => {
-  if (tmpRoot) rmSync(tmpRoot, { recursive: true, force: true })
+  if (tmpRoot) {rmSync(tmpRoot, { force: true, recursive: true })}
 })
 
 const buildCanonicalNotification = (m: Record<string, string>): string => {
   const keys = ['Message', 'MessageId', 'Subject', 'Timestamp', 'TopicArn', 'Type']
   let canonical = ''
   for (const k of keys) {
-    if (m[k] === undefined) continue
+    if (m[k] === undefined) {continue}
     canonical += `${k}\n${m[k]}\n`
   }
   return canonical
@@ -64,7 +63,7 @@ const buildCanonicalSubscription = (m: Record<string, string>): string => {
   const keys = ['Message', 'MessageId', 'SubscribeURL', 'Timestamp', 'Token', 'TopicArn', 'Type']
   let canonical = ''
   for (const k of keys) {
-    if (m[k] === undefined) continue
+    if (m[k] === undefined) {continue}
     canonical += `${k}\n${m[k]}\n`
   }
   return canonical
@@ -78,7 +77,7 @@ const signCanonical = (canonical: string): string => {
 
 const makeReq = (
   body: string,
-  messageType: 'SubscriptionConfirmation' | 'Notification',
+  messageType: 'Notification' | 'SubscriptionConfirmation',
 ): PayloadRequest => {
   const headers = new Headers()
   headers.set('x-amz-sns-message-type', messageType)
@@ -97,7 +96,7 @@ describe('aws-sns webhook', () => {
     webhook = makeAwsSnsWebhook({
       region: 'us-east-1',
       // Test seam: instead of fetching the URL, return our self-signed cert.
-      fetchCert: async () => certPem,
+      fetchCert: () => Promise.resolve(certPem),
       // Side-effect for SubscriptionConfirmation
       fetch: fetchSpy as unknown as (url: string) => Promise<Response>,
     })
@@ -109,34 +108,34 @@ describe('aws-sns webhook', () => {
 
   test('Notification: verify accepts a correctly-signed message', async () => {
     const message = {
-      Type: 'Notification',
-      MessageId: 'm1',
-      TopicArn: 'arn:aws:sns:us-east-1:1:t',
       Message: JSON.stringify({
-        notification: { messageId: 'sns-1' },
         delivery: { destination: '+15551234567' },
+        notification: { messageId: 'sns-1' },
         status: 'SUCCESS',
       }),
-      Timestamp: new Date().toISOString(),
+      MessageId: 'm1',
       SignatureVersion: '1',
       SigningCertURL: 'https://sns.us-east-1.amazonaws.com/SimpleNotificationService-x.pem',
+      Timestamp: new Date().toISOString(),
+      TopicArn: 'arn:aws:sns:us-east-1:1:t',
+      Type: 'Notification',
     } as Record<string, string>
     const canonical = buildCanonicalNotification(message)
-    ;(message as Record<string, string>).Signature = signCanonical(canonical)
+    ;(message).Signature = signCanonical(canonical)
     const body = JSON.stringify(message)
     await webhook.verify(makeReq(body, 'Notification'), Buffer.from(body))
   })
 
   test('Notification: rejects when SigningCertURL host is not AWS', async () => {
     const message = {
-      Type: 'Notification',
-      MessageId: 'm1',
-      TopicArn: 't',
       Message: 'x',
-      Timestamp: new Date().toISOString(),
-      SignatureVersion: '1',
+      MessageId: 'm1',
       Signature: 'AAAA',
+      SignatureVersion: '1',
       SigningCertURL: 'https://evil.example.com/cert.pem',
+      Timestamp: new Date().toISOString(),
+      TopicArn: 't',
+      Type: 'Notification',
     } as Record<string, string>
     const body = JSON.stringify(message)
     await expect(
@@ -146,14 +145,14 @@ describe('aws-sns webhook', () => {
 
   test('Notification: rejects bad signature', async () => {
     const message = {
-      Type: 'Notification',
-      MessageId: 'm1',
-      TopicArn: 't',
       Message: 'x',
-      Timestamp: new Date().toISOString(),
-      SignatureVersion: '1',
+      MessageId: 'm1',
       Signature: Buffer.from('not a real signature').toString('base64'),
+      SignatureVersion: '1',
       SigningCertURL: 'https://sns.us-east-1.amazonaws.com/cert.pem',
+      Timestamp: new Date().toISOString(),
+      TopicArn: 't',
+      Type: 'Notification',
     } as Record<string, string>
     const body = JSON.stringify(message)
     await expect(
@@ -163,18 +162,18 @@ describe('aws-sns webhook', () => {
 
   test('SubscriptionConfirmation: verify hits SubscribeURL via fetch', async () => {
     const message = {
-      Type: 'SubscriptionConfirmation',
-      MessageId: 'm1',
-      Token: 'tok',
-      TopicArn: 't',
       Message: 'You have to confirm',
-      SubscribeURL: 'https://sns.us-east-1.amazonaws.com/?Action=ConfirmSubscription&Token=tok',
-      Timestamp: new Date().toISOString(),
+      MessageId: 'm1',
       SignatureVersion: '1',
       SigningCertURL: 'https://sns.us-east-1.amazonaws.com/cert.pem',
+      SubscribeURL: 'https://sns.us-east-1.amazonaws.com/?Action=ConfirmSubscription&Token=tok',
+      Timestamp: new Date().toISOString(),
+      Token: 'tok',
+      TopicArn: 't',
+      Type: 'SubscriptionConfirmation',
     } as Record<string, string>
     const canonical = buildCanonicalSubscription(message)
-    ;(message as Record<string, string>).Signature = signCanonical(canonical)
+    ;(message).Signature = signCanonical(canonical)
     const body = JSON.stringify(message)
     await webhook.verify(makeReq(body, 'SubscriptionConfirmation'), Buffer.from(body))
     expect(fetchSpy).toHaveBeenCalledWith(message.SubscribeURL)
@@ -182,19 +181,19 @@ describe('aws-sns webhook', () => {
 
   test('SubscriptionConfirmation: rejects SubscribeURL pointing at non-AWS host (SSRF guard)', async () => {
     const message = {
-      Type: 'SubscriptionConfirmation',
+      Message: 'You have to confirm',
       MessageId: 'm1',
       Token: 'tok',
       TopicArn: 't',
-      Message: 'You have to confirm',
+      Type: 'SubscriptionConfirmation',
       // Attacker-controlled SubscribeURL even though SigningCertURL is legit.
-      SubscribeURL: 'http://169.254.169.254/latest/meta-data/',
-      Timestamp: new Date().toISOString(),
       SignatureVersion: '1',
       SigningCertURL: 'https://sns.us-east-1.amazonaws.com/cert.pem',
+      SubscribeURL: 'http://169.254.169.254/latest/meta-data/',
+      Timestamp: new Date().toISOString(),
     } as Record<string, string>
     const canonical = buildCanonicalSubscription(message)
-    ;(message as Record<string, string>).Signature = signCanonical(canonical)
+    ;(message).Signature = signCanonical(canonical)
     const body = JSON.stringify(message)
     await expect(
       webhook.verify(makeReq(body, 'SubscriptionConfirmation'), Buffer.from(body)),
@@ -208,8 +207,8 @@ describe('aws-sns webhook', () => {
       status: 'SUCCESS',
     }
     const body = JSON.stringify({
-      Type: 'Notification',
       Message: JSON.stringify(inner),
+      Type: 'Notification',
     })
     const events = (await webhook.parse(
       makeReq(body, 'Notification'),
@@ -221,18 +220,18 @@ describe('aws-sns webhook', () => {
 
   test('parse FAILURE -> failed', async () => {
     const inner = {
+      delivery: { providerResponse: 'phone unreachable' },
       notification: { messageId: 'sns-2' },
       status: 'FAILURE',
-      delivery: { providerResponse: 'phone unreachable' },
     }
     const body = JSON.stringify({
-      Type: 'Notification',
       Message: JSON.stringify(inner),
+      Type: 'Notification',
     })
     const events = (await webhook.parse(
       makeReq(body, 'Notification'),
       Buffer.from(body),
-    )) as Array<{ providerMessageId: string; status: string; errorMessage?: string }>
+    )) as Array<{ errorMessage?: string; providerMessageId: string; status: string }>
     expect(events[0].status).toBe('failed')
     expect(events[0].errorMessage).toBe('phone unreachable')
   })

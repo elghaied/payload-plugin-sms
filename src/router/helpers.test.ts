@@ -2,17 +2,18 @@ import type { Payload } from 'payload'
 
 import { describe, expect, test, vi } from 'vitest'
 
+import type { RouteArgs } from './types.js'
+
 import { mockAdapter } from '../adapters/mock/index.js'
 import { SMSProviderError } from '../errors.js'
-import { byTenantLookup, byCountryPrefix, byRoundRobin, byRandom } from './helpers.js'
-import type { RouteArgs } from './types.js'
+import { byCountryPrefix, byRandom, byRoundRobin, byTenantLookup } from './helpers.js'
 
 const stubPayload = (
   findByIDImpl: (args: { collection: string; id: string }) => Promise<unknown>,
 ): Payload =>
   ({
     findByID: vi.fn(findByIDImpl),
-    logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
+    logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
   }) as unknown as Payload
 
 const buildArgs = (
@@ -20,13 +21,13 @@ const buildArgs = (
   context?: Record<string, unknown>,
 ): RouteArgs => ({
   message: {
-    to: '+15551234567',
-    from: '+15550000000',
     body: 'hi',
     context,
+    from: '+15550000000',
+    to: '+15551234567',
   },
-  providers: { twilio: mockAdapter(), telnyx: mockAdapter() },
   payload,
+  providers: { telnyx: mockAdapter(), twilio: mockAdapter() },
 })
 
 describe('byTenantLookup', () => {
@@ -36,7 +37,7 @@ describe('byTenantLookup', () => {
     const r = await route(buildArgs(payload, { tenantId: 't1' }))
     expect(r).toBe('twilio')
     expect(payload.findByID).toHaveBeenCalledWith(
-      expect.objectContaining({ collection: 'tenants', id: 't1', depth: 0 }),
+      expect.objectContaining({ id: 't1', collection: 'tenants', depth: 0 }),
     )
   })
 
@@ -58,8 +59,8 @@ describe('byTenantLookup', () => {
     const payload = stubPayload(async () => null)
     const route = byTenantLookup({
       collection: 'tenants',
-      providerField: 'smsProvider',
       fallback: 'twilio',
+      providerField: 'smsProvider',
     })
     const r = await route(buildArgs(payload, {}))
     expect(r).toBe('twilio')
@@ -76,9 +77,9 @@ describe('byTenantLookup', () => {
     const findByID = vi.fn(async () => ({ smsProvider: 'twilio' }))
     const payload = { findByID } as unknown as Payload
     const route = byTenantLookup({
+      cacheMs: 10_000,
       collection: 'tenants',
       providerField: 'smsProvider',
-      cacheMs: 10_000,
     })
     await route(buildArgs(payload, { tenantId: 't1' }))
     await route(buildArgs(payload, { tenantId: 't1' }))
@@ -92,8 +93,8 @@ describe('byTenantLookup', () => {
     })
     const route = byTenantLookup({
       collection: 'tenants',
-      providerField: 'smsProvider',
       fallback: 'telnyx',
+      providerField: 'smsProvider',
     })
     const r = await route(buildArgs(payload, { tenantId: 'missing' }))
     expect(r).toBe('telnyx')
@@ -111,9 +112,9 @@ describe('byTenantLookup', () => {
 })
 
 const argsWithTo = (to: string): RouteArgs => ({
-  message: { to, from: '+15550000000', body: 'hi' },
-  providers: { twilio: mockAdapter(), telnyx: mockAdapter() },
+  message: { body: 'hi', from: '+15550000000', to },
   payload: {} as Payload,
+  providers: { telnyx: mockAdapter(), twilio: mockAdapter() },
 })
 
 describe('byCountryPrefix', () => {

@@ -9,16 +9,16 @@ export const buildSMSLogsCollection = (
     typeof opts === 'object' && opts !== null ? opts : {}
 
   const baseFields: CollectionConfig['fields'] = [
-    { name: 'to', type: 'text', required: true, index: true },
+    { name: 'to', type: 'text', index: true, required: true },
     { name: 'from', type: 'text', required: true },
     { name: 'body', type: 'textarea', required: true },
-    { name: 'provider', type: 'text', required: true, index: true },
+    { name: 'provider', type: 'text', index: true, required: true },
     {
       name: 'status',
       type: 'select',
-      required: true,
       index: true,
       options: ['queued', 'sent', 'delivered', 'failed', 'unknown'],
+      required: true,
     },
     { name: 'providerMessageId', type: 'text', index: true },
     {
@@ -31,7 +31,7 @@ export const buildSMSLogsCollection = (
     },
     { name: 'error', type: 'textarea' },
     { name: 'errorCode', type: 'text' },
-    { name: 'sentAt', type: 'date', required: true, index: true },
+    { name: 'sentAt', type: 'date', index: true, required: true },
     { name: 'deliveredAt', type: 'date', index: true },
     { name: 'failedAt', type: 'date', index: true },
   ]
@@ -58,17 +58,17 @@ export const buildSMSLogsCollection = (
 
   return {
     slug: options.slug ?? 'sms-logs',
+    access: {
+      create: () => false,
+      delete: () => false,
+      read: ({ req }) => Boolean(req.user),
+      update: () => false,
+    },
     admin: {
+      defaultColumns: ['to', 'status', 'provider', 'sentAt'],
       group: 'SMS',
       useAsTitle: 'to',
-      defaultColumns: ['to', 'status', 'provider', 'sentAt'],
       ...(options.admin ?? {}),
-    },
-    access: {
-      read: ({ req }) => Boolean(req.user),
-      create: () => false,
-      update: () => false,
-      delete: () => false,
     },
     fields: baseFields,
     timestamps: true,

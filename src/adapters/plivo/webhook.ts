@@ -1,6 +1,6 @@
-import { createHmac, timingSafeEqual } from 'node:crypto'
-
 import type { PayloadRequest } from 'payload'
+
+import { createHmac, timingSafeEqual } from 'node:crypto'
 
 import type { SMSStatus, SMSStatusEvent, SMSWebhookHandler } from '../../types.js'
 
@@ -13,12 +13,12 @@ export interface PlivoWebhookOptions {
 }
 
 const STATUS_MAP: Record<string, SMSStatus> = {
-  queued: 'queued',
-  sent: 'sent',
   delivered: 'delivered',
-  undelivered: 'failed',
   failed: 'failed',
+  queued: 'queued',
   rejected: 'failed',
+  sent: 'sent',
+  undelivered: 'failed',
 }
 
 const mapStatus = (s: string | undefined): SMSStatus =>
@@ -27,7 +27,7 @@ const mapStatus = (s: string | undefined): SMSStatus =>
 const safeEqual = (a: string, b: string): boolean => {
   const ab = Buffer.from(a)
   const bb = Buffer.from(b)
-  if (ab.length !== bb.length) return false
+  if (ab.length !== bb.length) {return false}
   return timingSafeEqual(ab, bb)
 }
 
@@ -35,7 +35,7 @@ const parseForm = (raw: Buffer): Record<string, string> => {
   const text = raw.toString('utf8')
   const out: Record<string, string> = {}
   for (const pair of text.split('&')) {
-    if (!pair) continue
+    if (!pair) {continue}
     const eq = pair.indexOf('=')
     const k = eq === -1 ? pair : pair.slice(0, eq)
     const v = eq === -1 ? '' : pair.slice(eq + 1)
@@ -71,14 +71,14 @@ export const makePlivoWebhook = (
   parse(_req: PayloadRequest, rawBody: Buffer): SMSStatusEvent[] {
     const params = parseForm(rawBody)
     const uuid = params.MessageUUID
-    if (!uuid) return []
+    if (!uuid) {return []}
     const event: SMSStatusEvent = {
-      providerMessageId: uuid,
-      status: mapStatus(params.Status),
       occurredAt: new Date(),
+      providerMessageId: uuid,
       raw: { ...params },
+      status: mapStatus(params.Status),
     }
-    if (params.ErrorCode) event.errorCode = params.ErrorCode
+    if (params.ErrorCode) {event.errorCode = params.ErrorCode}
     return [event]
   },
 })

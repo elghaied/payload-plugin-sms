@@ -2,14 +2,15 @@ import type { Payload } from 'payload'
 
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 
+import type { SMSAdapter, SMSWebhookHandler } from '../types.js'
+
 import { mockAdapter } from '../adapters/mock/index.js'
 import { SMSProviderError, SMSValidationError } from '../errors.js'
-import type { SMSAdapter, SMSWebhookHandler } from '../types.js'
 import { routerAdapter } from './index.js'
 
 const stubPayload = (): Payload =>
   ({
-    logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
+    logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
   }) as unknown as Payload
 
 describe('routerAdapter', () => {
@@ -29,9 +30,9 @@ describe('routerAdapter', () => {
 
   test('exposes defaultFrom from options', () => {
     const r = routerAdapter({
+      defaultFrom: '+15551111111',
       providers: { a: mockAdapter() },
       route: () => 'a',
-      defaultFrom: '+15551111111',
     })
     expect(r.defaultFrom).toBe('+15551111111')
   })
@@ -44,9 +45,9 @@ describe('routerAdapter', () => {
       route: () => 'b',
     })
     const result = await r.send({
-      to: '+15551234567',
-      from: '+15550000000',
       body: 'hi',
+      from: '+15550000000',
+      to: '+15551234567',
     })
     expect(result.provider).toBe('b')
     expect(b.messages).toHaveLength(1)
@@ -60,9 +61,9 @@ describe('routerAdapter', () => {
       route: () => 'twilio-us',
     })
     const result = await r.send({
-      to: '+15551234567',
-      from: '+15550000000',
       body: 'hi',
+      from: '+15550000000',
+      to: '+15551234567',
     })
     expect(result.provider).toBe('twilio-us')
   })
@@ -73,7 +74,7 @@ describe('routerAdapter', () => {
       route: () => 'nonexistent',
     })
     await expect(
-      r.send({ to: '+15551234567', from: '+15550000000', body: 'hi' }),
+      r.send({ body: 'hi', from: '+15550000000', to: '+15551234567' }),
     ).rejects.toBeInstanceOf(SMSProviderError)
   })
 
@@ -84,7 +85,7 @@ describe('routerAdapter', () => {
       route: () => ['nonexistent', 'a'],
     })
     await expect(
-      r.send({ to: '+15551234567', from: '+15550000000', body: 'hi' }),
+      r.send({ body: 'hi', from: '+15550000000', to: '+15551234567' }),
     ).rejects.toBeInstanceOf(SMSProviderError)
     expect(a.messages).toHaveLength(0)
   })
@@ -99,7 +100,7 @@ describe('routerAdapter', () => {
     })
     let caught: unknown
     try {
-      await r.send({ to: '+15551234567', from: '+15550000000', body: 'hi' })
+      await r.send({ body: 'hi', from: '+15550000000', to: '+15551234567' })
     } catch (e) {
       caught = e
     }
@@ -117,9 +118,9 @@ describe('routerAdapter', () => {
       route: () => ['a', 'b'],
     })
     const result = await r.send({
-      to: '+15551234567',
-      from: '+15550000000',
       body: 'hi',
+      from: '+15550000000',
+      to: '+15551234567',
     })
     expect(result.provider).toBe('b')
     expect(b.messages).toHaveLength(1)
@@ -134,7 +135,7 @@ describe('routerAdapter', () => {
     })
     let caught: unknown
     try {
-      await r.send({ to: '+15551234567', from: '+15550000000', body: 'hi' })
+      await r.send({ body: 'hi', from: '+15550000000', to: '+15551234567' })
     } catch (e) {
       caught = e
     }
@@ -157,7 +158,7 @@ describe('routerAdapter', () => {
       route: () => ['a', 'b'],
     })
     await expect(
-      r.send({ to: '+15551234567', from: '+15550000000', body: 'hi' }),
+      r.send({ body: 'hi', from: '+15550000000', to: '+15551234567' }),
     ).rejects.toBeInstanceOf(SMSValidationError)
     expect(b.messages).toHaveLength(0)
   })
@@ -172,10 +173,10 @@ describe('routerAdapter', () => {
       },
     })
     await r.send({
-      to: '+15551234567',
-      from: '+15550000000',
       body: 'hi',
       context: { tenantId: 'acme' },
+      from: '+15550000000',
+      to: '+15551234567',
     })
     expect(a.messages[0].context).toEqual({ tenantId: 'acme' })
   })
@@ -192,7 +193,7 @@ describe('routerAdapter', () => {
     })
     expect(r.init).toBeDefined()
     await r.init!(payload)
-    await r.send({ to: '+15551234567', from: '+15550000000', body: 'hi' })
+    await r.send({ body: 'hi', from: '+15550000000', to: '+15551234567' })
     expect(seen).toHaveLength(1)
     expect(seen[0]).toBe(payload)
   })
@@ -202,12 +203,12 @@ describe('routerAdapter', () => {
     const child = {
       name: 'child',
       defaultFrom: '+15550000000',
-      send: async () => ({
-        id: 'x', provider: 'child', status: 'sent' as const,
-        to: '+15551234567', from: '+15550000000', body: 'hi',
-        raw: {}, sentAt: new Date(),
-      }),
       init: childInit,
+      send: async () => ({
+        id: 'x', body: 'hi', from: '+15550000000',
+        provider: 'child', raw: {}, sentAt: new Date(),
+        status: 'sent' as const, to: '+15551234567',
+      }),
     }
     const r = routerAdapter({ providers: { child }, route: () => 'child' })
     await r.init!(payload)
@@ -218,12 +219,12 @@ describe('routerAdapter', () => {
     const r = routerAdapter({
       providers: { a: mockAdapter({ defaultFrom: '+15550000000' }) },
       route: ({ payload: p }) => {
-        if (!p) throw new Error('payload not set')
+        if (!p) {throw new Error('payload not set')}
         return 'a'
       },
     })
     await expect(
-      r.send({ to: '+15551234567', from: '+15550000000', body: 'hi' }),
+      r.send({ body: 'hi', from: '+15550000000', to: '+15551234567' }),
     ).rejects.toThrow(/payload not set/)
   })
 })
@@ -231,21 +232,17 @@ describe('routerAdapter', () => {
 describe('routerAdapter exposes webhooks array', () => {
   test('aggregates webhooks from children that have one', () => {
     const wh: SMSWebhookHandler = {
-      verify: () => undefined,
       parse: () => [],
+      verify: () => undefined,
     }
     const a: SMSAdapter = {
       name: 'a',
-      send: async () => {
-        throw new Error('unused')
-      },
+      send: () => Promise.reject(new Error('unused')),
       webhook: wh,
     }
     const b: SMSAdapter = {
       name: 'b',
-      send: async () => {
-        throw new Error('unused')
-      },
+      send: () => Promise.reject(new Error('unused')),
     }
     const r = routerAdapter({
       providers: { a, b },
@@ -266,15 +263,13 @@ describe('routerAdapter exposes webhooks array', () => {
 
   test('child webhook.path override is preserved', () => {
     const wh: SMSWebhookHandler = {
+      parse: () => [],
       path: 'twilio-marketing',
       verify: () => undefined,
-      parse: () => [],
     }
     const a: SMSAdapter = {
       name: 'twilio',
-      send: async () => {
-        throw new Error('unused')
-      },
+      send: () => Promise.reject(new Error('unused')),
       webhook: wh,
     }
     const r = routerAdapter({

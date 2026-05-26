@@ -1,7 +1,6 @@
-import { createHmac } from 'node:crypto'
-
 import type { PayloadRequest } from 'payload'
 
+import { createHmac } from 'node:crypto'
 import { beforeEach, describe, expect, test } from 'vitest'
 
 import { SMSWebhookVerificationError } from '../../errors.js'
@@ -26,8 +25,8 @@ const makeReq = (params: Record<string, string>, sig: string): PayloadRequest =>
   headers.set('x-twilio-signature', sig)
   headers.set('host', 'app.test')
   return {
-    url: URL,
     headers,
+    url: URL,
   } as unknown as PayloadRequest
 }
 
@@ -57,7 +56,7 @@ describe('twilio webhook', () => {
     const params = { MessageSid: 'SM1', MessageStatus: 'delivered' }
     const headers = new Headers()
     headers.set('host', 'app.test')
-    const req = { url: URL, headers } as unknown as PayloadRequest
+    const req = { headers, url: URL } as unknown as PayloadRequest
     expect(() => webhook.verify(req, Buffer.from(formEncode(params)))).toThrow(
       SMSWebhookVerificationError,
     )
@@ -65,18 +64,18 @@ describe('twilio webhook', () => {
 
   test('parse extracts providerMessageId, mapped status, errorCode', () => {
     const params = {
+      ErrorCode: '30005',
       MessageSid: 'SM1',
       MessageStatus: 'delivered',
-      ErrorCode: '30005',
     }
     const events = webhook.parse(
       makeReq(params, 'irrelevant'),
       Buffer.from(formEncode(params)),
-    ) as ReturnType<typeof webhook.parse>
+    )
     const arr = events as Array<{
+      errorCode?: string
       providerMessageId: string
       status: string
-      errorCode?: string
     }>
     expect(arr).toHaveLength(1)
     expect(arr[0].providerMessageId).toBe('SM1')
@@ -115,8 +114,8 @@ describe('twilio webhook', () => {
     headers.set('x-forwarded-proto', 'https')
     headers.set('x-forwarded-host', 'app.example.com')
     const req = {
-      url: 'http://internal:3000/api/sms/webhooks/twilio',
       headers,
+      url: 'http://internal:3000/api/sms/webhooks/twilio',
     } as unknown as PayloadRequest
     expect(() => wh.verify(req, Buffer.from(formEncode(params)))).not.toThrow()
   })

@@ -1,6 +1,6 @@
-import { createVerify, X509Certificate } from 'node:crypto'
-
 import type { PayloadRequest } from 'payload'
+
+import { createVerify, X509Certificate } from 'node:crypto'
 
 import type { SMSStatus, SMSStatusEvent, SMSWebhookHandler } from '../../types.js'
 
@@ -28,7 +28,7 @@ const SUBSCRIPTION_KEYS = [
 const buildCanonical = (body: Record<string, string>, keys: string[]): string => {
   let canonical = ''
   for (const k of keys) {
-    if (body[k] === undefined) continue
+    if (body[k] === undefined) {continue}
     canonical += `${k}\n${body[k]}\n`
   }
   return canonical
@@ -36,7 +36,7 @@ const buildCanonical = (body: Record<string, string>, keys: string[]): string =>
 
 const defaultFetchCert = async (url: string): Promise<string> => {
   const r = await fetch(url)
-  if (!r.ok) throw new SMSWebhookVerificationError(`aws-sns: cert fetch ${r.status}`)
+  if (!r.ok) {throw new SMSWebhookVerificationError(`aws-sns: cert fetch ${r.status}`)}
   return r.text()
 }
 
@@ -65,7 +65,7 @@ export const makeAwsSnsWebhook = (opts: AwsSnsWebhookOptions): SMSWebhookHandler
   return {
     parse(_req: PayloadRequest, rawBody: Buffer): SMSStatusEvent[] {
       const body = JSON.parse(rawBody.toString('utf8')) as Record<string, string>
-      if (body.Type !== 'Notification') return []
+      if (body.Type !== 'Notification') {return []}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let inner: any = {}
       try {
@@ -74,7 +74,7 @@ export const makeAwsSnsWebhook = (opts: AwsSnsWebhookOptions): SMSWebhookHandler
         return []
       }
       const id = inner?.notification?.messageId
-      if (!id) return []
+      if (!id) {return []}
       const event: SMSStatusEvent = {
         occurredAt: new Date(),
         providerMessageId: String(id),
@@ -82,7 +82,7 @@ export const makeAwsSnsWebhook = (opts: AwsSnsWebhookOptions): SMSWebhookHandler
         status: mapStatus(inner?.status),
       }
       const providerResponse = inner?.delivery?.providerResponse
-      if (providerResponse) event.errorMessage = String(providerResponse)
+      if (providerResponse) {event.errorMessage = String(providerResponse)}
       return [event]
     },
 

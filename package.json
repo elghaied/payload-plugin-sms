@@ -90,7 +90,7 @@
     "generate:importmap": "pnpm dev:generate-importmap",
     "generate:types": "pnpm dev:generate-types",
     "lint": "eslint",
-    "lint:fix": "eslint ./src --fix",
+    "lint:fix": "eslint --fix",
     "test": "pnpm test:int",
     "test:int": "vitest run"
   },

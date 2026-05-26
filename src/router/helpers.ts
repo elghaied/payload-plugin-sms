@@ -1,18 +1,18 @@
-import { SMSProviderError } from '../errors.js'
-
 import type { ProviderName, RouteFunction } from './types.js'
 
+import { SMSProviderError } from '../errors.js'
+
 export interface ByTenantLookupOptions {
+  cacheMs?: number
   collection: string
   contextKey?: string
-  providerField: string
-  cacheMs?: number
   fallback?: ProviderName
+  providerField: string
 }
 
 interface CacheEntry {
-  name: ProviderName
   at: number
+  name: ProviderName
 }
 
 export const byTenantLookup = (opts: ByTenantLookupOptions): RouteFunction => {
@@ -22,7 +22,7 @@ export const byTenantLookup = (opts: ByTenantLookupOptions): RouteFunction => {
   return async ({ message, payload }) => {
     const rawId = message.context?.[contextKey]
     if (typeof rawId !== 'string' || rawId.length === 0) {
-      if (opts.fallback) return opts.fallback
+      if (opts.fallback) {return opts.fallback}
       throw new SMSProviderError(
         `byTenantLookup: message.context.${contextKey} is required (got ${JSON.stringify(rawId)})`,
       )
@@ -36,16 +36,16 @@ export const byTenantLookup = (opts: ByTenantLookupOptions): RouteFunction => {
       }
     }
 
-    let doc: Record<string, unknown> | null
+    let doc: null | Record<string, unknown>
     try {
       doc = (await payload.findByID({
-        collection: opts.collection,
         id,
+        collection: opts.collection,
         depth: 0,
         overrideAccess: true,
-      })) as Record<string, unknown> | null
+      })) as null | Record<string, unknown>
     } catch (err) {
-      if (opts.fallback) return opts.fallback
+      if (opts.fallback) {return opts.fallback}
       throw new SMSProviderError(
         `byTenantLookup: failed to find ${opts.collection} ${id}`,
         { cause: err },
@@ -54,13 +54,13 @@ export const byTenantLookup = (opts: ByTenantLookupOptions): RouteFunction => {
 
     const raw = doc?.[opts.providerField]
     if (typeof raw !== 'string' || raw.length === 0) {
-      if (opts.fallback) return opts.fallback
+      if (opts.fallback) {return opts.fallback}
       throw new SMSProviderError(
         `byTenantLookup: ${opts.collection}.${opts.providerField} is empty for id ${id}`,
       )
     }
 
-    if (cache) cache.set(id, { name: raw, at: Date.now() })
+    if (cache) {cache.set(id, { name: raw, at: Date.now() })}
     return raw
   }
 }
@@ -77,9 +77,9 @@ export const byCountryPrefix = (
 
   return async ({ message }) => {
     for (const [prefix, name] of entries) {
-      if (message.to.startsWith(prefix)) return name
+      if (message.to.startsWith(prefix)) {return name}
     }
-    if (opts.fallback) return opts.fallback
+    if (opts.fallback) {return opts.fallback}
     throw new SMSProviderError(
       `byCountryPrefix: no prefix matched ${JSON.stringify(message.to)} and no fallback provided`,
     )

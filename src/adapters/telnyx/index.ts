@@ -14,24 +14,24 @@ export interface TelnyxAdapterOptions {
   defaultFrom?: string
   messagingProfileId?: string
   webhook?: {
+    maxDriftSec?: number
+    path?: string
     /** PEM-encoded Ed25519 public key from Telnyx portal. Required to enable verify. */
     publicKey: string
-    path?: string
-    maxDriftSec?: number
   } | false
 }
 
 const STATUS_MAP: Record<string, SMSStatus> = {
+  delivered: 'delivered',
+  delivery_failed: 'failed',
   queued: 'queued',
   sending: 'sent',
-  sent: 'sent',
-  delivered: 'delivered',
   sending_failed: 'failed',
-  delivery_failed: 'failed',
+  sent: 'sent',
 }
 
-const mapStatus = (s: string | null | undefined): SMSStatus => {
-  if (!s) return 'queued'
+const mapStatus = (s: null | string | undefined): SMSStatus => {
+  if (!s) {return 'queued'}
   return STATUS_MAP[s] ?? 'unknown'
 }
 
@@ -50,10 +50,10 @@ const loadTelnyx = async (): Promise<new (opts: { apiKey: string }) => any> => {
 }
 
 const buildWebhook = (opts: TelnyxAdapterOptions): SMSWebhookHandler | undefined => {
-  if (!opts.webhook) return undefined
+  if (!opts.webhook) {return undefined}
   const baseHandler = makeTelnyxWebhook({
-    publicKey: opts.webhook.publicKey,
     maxDriftSec: opts.webhook.maxDriftSec,
+    publicKey: opts.webhook.publicKey,
   })
   return opts.webhook.path
     ? { ...baseHandler, path: opts.webhook.path }
@@ -63,15 +63,14 @@ const buildWebhook = (opts: TelnyxAdapterOptions): SMSWebhookHandler | undefined
 export const telnyxAdapter = (opts: TelnyxAdapterOptions): SMSAdapter => ({
   name: 'telnyx',
   defaultFrom: opts.defaultFrom,
-  webhook: buildWebhook(opts),
   async send(message: OutboundSMSMessage): Promise<SMSResult> {
     const Telnyx = await loadTelnyx()
     const client = new Telnyx({ apiKey: opts.apiKey })
 
     const payload: Record<string, unknown> = {
-      to: message.to,
       from: message.from,
       text: message.body,
+      to: message.to,
     }
     if (message.mediaUrls?.length) {
       payload.media_urls = message.mediaUrls
@@ -86,13 +85,13 @@ export const telnyxAdapter = (opts: TelnyxAdapterOptions): SMSAdapter => ({
       const firstStatus = Array.isArray(data?.to) ? data.to[0]?.status : data?.status
       return {
         id: String(data.id ?? ''),
-        provider: 'telnyx',
-        status: mapStatus(firstStatus),
-        to: message.to,
-        from: message.from,
         body: message.body,
+        from: message.from,
+        provider: 'telnyx',
         raw: response,
         sentAt: new Date(),
+        status: mapStatus(firstStatus),
+        to: message.to,
       }
     } catch (err) {
       throw new SMSProviderError(`Telnyx send failed: ${(err as Error).message}`, {
@@ -100,4 +99,5 @@ export const telnyxAdapter = (opts: TelnyxAdapterOptions): SMSAdapter => ({
       })
     }
   },
+  webhook: buildWebhook(opts),
 })

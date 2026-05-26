@@ -1,6 +1,6 @@
-import { createHmac, timingSafeEqual } from 'node:crypto'
-
 import type { PayloadRequest } from 'payload'
+
+import { createHmac, timingSafeEqual } from 'node:crypto'
 
 import type { SMSStatus, SMSStatusEvent, SMSWebhookHandler } from '../../types.js'
 
@@ -13,24 +13,24 @@ export interface TwilioWebhookOptions {
 }
 
 const STATUS_MAP: Record<string, SMSStatus> = {
-  queued: 'queued',
   accepted: 'queued',
+  delivered: 'delivered',
+  failed: 'failed',
+  queued: 'queued',
+  received: 'delivered',
   scheduled: 'queued',
   sending: 'sent',
   sent: 'sent',
-  delivered: 'delivered',
-  received: 'delivered',
   undelivered: 'failed',
-  failed: 'failed',
 }
 
-const mapStatus = (s: string | undefined | null): SMSStatus =>
+const mapStatus = (s: null | string | undefined): SMSStatus =>
   s ? (STATUS_MAP[s] ?? 'unknown') : 'unknown'
 
 const safeEqual = (a: string, b: string): boolean => {
   const ab = Buffer.from(a)
   const bb = Buffer.from(b)
-  if (ab.length !== bb.length) return false
+  if (ab.length !== bb.length) {return false}
   return timingSafeEqual(ab, bb)
 }
 
@@ -56,15 +56,15 @@ export const makeTwilioWebhook = (
   parse(_req: PayloadRequest, rawBody: Buffer): SMSStatusEvent[] {
     const params = parseForm(rawBody)
     const sid = params.MessageSid
-    if (!sid) return []
+    if (!sid) {return []}
     const event: SMSStatusEvent = {
-      providerMessageId: sid,
-      status: mapStatus(params.MessageStatus),
       occurredAt: new Date(),
+      providerMessageId: sid,
       raw: { ...params },
+      status: mapStatus(params.MessageStatus),
     }
-    if (params.ErrorCode) event.errorCode = params.ErrorCode
-    if (params.ErrorMessage) event.errorMessage = params.ErrorMessage
+    if (params.ErrorCode) {event.errorCode = params.ErrorCode}
+    if (params.ErrorMessage) {event.errorMessage = params.ErrorMessage}
     return [event]
   },
 })
@@ -73,7 +73,7 @@ const parseForm = (raw: Buffer): Record<string, string> => {
   const text = raw.toString('utf8')
   const out: Record<string, string> = {}
   for (const pair of text.split('&')) {
-    if (!pair) continue
+    if (!pair) {continue}
     const eq = pair.indexOf('=')
     const k = eq === -1 ? pair : pair.slice(0, eq)
     const v = eq === -1 ? '' : pair.slice(eq + 1)

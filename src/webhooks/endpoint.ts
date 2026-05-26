@@ -7,24 +7,24 @@ import { applyStatusEvent } from './applyStatusEvent.js'
 import { readRawBody } from './rawBody.js'
 
 export interface MakeWebhookEndpointHandlerDeps {
-  handler: SMSWebhookHandler
   adapterName: string
+  handler: SMSWebhookHandler
+  logsIncludeStatusHistory: boolean
+  logsSlug: string | undefined
   payload: Payload
   pluginConfig: SMSPluginConfig
-  logsSlug: string | undefined
-  logsIncludeStatusHistory: boolean
 }
 
 export const makeWebhookEndpointHandler =
   (deps: MakeWebhookEndpointHandlerDeps) =>
   async (req: PayloadRequest): Promise<Response> => {
     const {
-      handler,
       adapterName,
+      handler,
+      logsIncludeStatusHistory,
+      logsSlug,
       payload,
       pluginConfig,
-      logsSlug,
-      logsIncludeStatusHistory,
     } = deps
 
     let rawBody: Buffer
@@ -32,9 +32,9 @@ export const makeWebhookEndpointHandler =
       rawBody = await readRawBody(req)
     } catch (err) {
       payload.logger.warn({
-        msg: 'payload-plugin-sms webhook: failed to read raw body',
         adapter: adapterName,
         err,
+        msg: 'payload-plugin-sms webhook: failed to read raw body',
       })
       return new Response('Bad Request', { status: 400 })
     }
@@ -46,16 +46,16 @@ export const makeWebhookEndpointHandler =
       } catch (err) {
         if (err instanceof SMSWebhookVerificationError) {
           payload.logger.warn({
-            msg: 'payload-plugin-sms webhook: signature verification failed',
             adapter: adapterName,
             err: err.message,
+            msg: 'payload-plugin-sms webhook: signature verification failed',
           })
           return new Response('Forbidden', { status: 403 })
         }
         payload.logger.error({
-          msg: 'payload-plugin-sms webhook: verify threw unexpectedly',
           adapter: adapterName,
           err,
+          msg: 'payload-plugin-sms webhook: verify threw unexpectedly',
         })
         return new Response('Internal Server Error', { status: 500 })
       }
@@ -66,22 +66,22 @@ export const makeWebhookEndpointHandler =
       events = await handler.parse(req, rawBody)
     } catch (err) {
       payload.logger.error({
-        msg: 'payload-plugin-sms webhook: parse failed',
         adapter: adapterName,
         err,
+        msg: 'payload-plugin-sms webhook: parse failed',
       })
       return new Response('Internal Server Error', { status: 500 })
     }
 
     for (const event of events) {
       await applyStatusEvent({
-        payload,
-        logsSlug,
         adapterName,
         event,
+        logsIncludeStatusHistory,
+        logsSlug,
+        payload,
         pluginConfig,
         req,
-        logsIncludeStatusHistory,
       })
     }
 

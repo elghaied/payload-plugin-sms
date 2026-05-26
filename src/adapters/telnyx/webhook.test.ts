@@ -1,14 +1,13 @@
-import { generateKeyPairSync, sign as edSign } from 'node:crypto'
-
 import type { PayloadRequest } from 'payload'
 
+import { sign as edSign, generateKeyPairSync } from 'node:crypto'
 import { beforeEach, describe, expect, test } from 'vitest'
 
 import { SMSWebhookVerificationError } from '../../errors.js'
 import { makeTelnyxWebhook } from './webhook.js'
 
-const { publicKey, privateKey } = generateKeyPairSync('ed25519')
-const publicKeyB64 = publicKey.export({ format: 'pem', type: 'spki' }).toString()
+const { privateKey, publicKey } = generateKeyPairSync('ed25519')
+const publicKeyB64 = publicKey.export({ type: 'spki', format: 'pem' }).toString()
 
 const signTelnyx = (timestamp: string, body: string): string => {
   const message = Buffer.from(`${timestamp}|${body}`)

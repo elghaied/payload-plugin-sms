@@ -1,7 +1,6 @@
-import { createHmac } from 'node:crypto'
-
 import type { PayloadRequest } from 'payload'
 
+import { createHmac } from 'node:crypto'
 import { beforeEach, describe, expect, test } from 'vitest'
 
 import { SMSWebhookVerificationError } from '../../errors.js'
@@ -23,7 +22,7 @@ const makeReq = (sig: string, nonce: string): PayloadRequest => {
   headers.set('x-plivo-signature-v3', sig)
   headers.set('x-plivo-signature-v3-nonce', nonce)
   headers.set('host', 'app.test')
-  return { url: URL, headers } as unknown as PayloadRequest
+  return { headers, url: URL } as unknown as PayloadRequest
 }
 
 describe('plivo webhook', () => {
@@ -55,7 +54,7 @@ describe('plivo webhook', () => {
     headers.set('host', 'app.test')
     expect(() =>
       webhook.verify(
-        { url: URL, headers } as unknown as PayloadRequest,
+        { headers, url: URL } as unknown as PayloadRequest,
         Buffer.from(''),
       ),
     ).toThrow(SMSWebhookVerificationError)
@@ -63,14 +62,14 @@ describe('plivo webhook', () => {
 
   test('parse extracts MessageUUID, status, errorCode', () => {
     const params = {
+      ErrorCode: '4001',
       MessageUUID: 'p1',
       Status: 'delivered',
-      ErrorCode: '4001',
     }
     const events = webhook.parse(
       makeReq('x', 'x'),
       Buffer.from(formEncode(params)),
-    ) as Array<{ providerMessageId: string; status: string; errorCode?: string }>
+    ) as Array<{ errorCode?: string; providerMessageId: string; status: string }>
     expect(events).toHaveLength(1)
     expect(events[0].providerMessageId).toBe('p1')
     expect(events[0].status).toBe('delivered')

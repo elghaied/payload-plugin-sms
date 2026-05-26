@@ -3,7 +3,6 @@ import { getPayload } from 'payload'
 // `@payload-config` is the consumer Next.js app's path alias — resolved at
 // runtime in their project, not ours. The stub declaration in
 // payload-config-stub.d.ts satisfies the type-checker locally.
-// eslint-disable-next-line import/no-unresolved
 import configPromise from '@payload-config'
 
 export const SMSLogsWidget = async () => {
@@ -20,9 +19,9 @@ export const SMSLogsWidget = async () => {
     }),
     payload.find({
       collection: 'sms-logs',
+      depth: 0,
       limit: 5,
       sort: '-sentAt',
-      depth: 0,
     }),
   ])
 
@@ -40,16 +39,16 @@ export const SMSLogsWidget = async () => {
       {recent.docs.length === 0 ? (
         <p style={{ color: 'var(--theme-elevation-500)' }}>No messages yet.</p>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
           {recent.docs.map((d) => {
             const doc = d as unknown as {
               id: string
-              to: string
-              status: string
               sentAt: string
+              status: string
+              to: string
             }
             return (
-              <li key={doc.id} style={{ padding: '0.25rem 0', fontSize: '0.875rem' }}>
+              <li key={doc.id} style={{ fontSize: '0.875rem', padding: '0.25rem 0' }}>
                 <code>{doc.to}</code> — {doc.status} —{' '}
                 {new Date(doc.sentAt).toLocaleString()}
               </li>

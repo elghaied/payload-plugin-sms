@@ -1,26 +1,26 @@
-import { createPublicKey, verify as edVerify } from 'node:crypto'
-
 import type { PayloadRequest } from 'payload'
+
+import { createPublicKey, verify as edVerify } from 'node:crypto'
 
 import type { SMSStatus, SMSStatusEvent, SMSWebhookHandler } from '../../types.js'
 
 import { SMSWebhookVerificationError } from '../../errors.js'
 
 export interface TelnyxWebhookOptions {
-  /** PEM-encoded Ed25519 public key from Telnyx portal. */
-  publicKey: string
   /** Max allowed drift in seconds between Telnyx-Timestamp and now. Default 300. */
   maxDriftSec?: number
+  /** PEM-encoded Ed25519 public key from Telnyx portal. */
+  publicKey: string
 }
 
 const STATUS_MAP: Record<string, SMSStatus> = {
+  delivered: 'delivered',
+  delivery_failed: 'failed',
+  delivery_unconfirmed: 'sent',
   queued: 'queued',
   sending: 'sent',
-  sent: 'sent',
-  delivered: 'delivered',
-  delivery_unconfirmed: 'sent',
   sending_failed: 'failed',
-  delivery_failed: 'failed',
+  sent: 'sent',
 }
 
 const mapStatus = (s: string | undefined): SMSStatus =>
@@ -66,20 +66,20 @@ export const makeTelnyxWebhook = (
     },
 
     parse(_req: PayloadRequest, rawBody: Buffer): SMSStatusEvent[] {
-      if (rawBody.length === 0) return []
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const json = JSON.parse(rawBody.toString('utf8')) as any
+      if (rawBody.length === 0) {return []}
+       
+      const json = JSON.parse(rawBody.toString('utf8'))
       const payload = json?.data?.payload
-      if (!payload?.id) return []
+      if (!payload?.id) {return []}
       const errors: Array<{ code?: string; title?: string }> = payload.errors ?? []
       const event: SMSStatusEvent = {
-        providerMessageId: String(payload.id),
-        status: mapStatus(payload.status),
         occurredAt: new Date(),
+        providerMessageId: String(payload.id),
         raw: json,
+        status: mapStatus(payload.status),
       }
-      if (errors[0]?.code) event.errorCode = String(errors[0].code)
-      if (errors[0]?.title) event.errorMessage = String(errors[0].title)
+      if (errors[0]?.code) {event.errorCode = String(errors[0].code)}
+      if (errors[0]?.title) {event.errorMessage = String(errors[0].title)}
       return [event]
     },
   }

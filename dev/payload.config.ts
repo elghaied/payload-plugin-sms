@@ -1,10 +1,10 @@
+import { smsPlugin } from '@elghaied/payload-plugin-sms'
+import { mockAdapter } from '@elghaied/payload-plugin-sms/mock'
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
 import { buildConfig } from 'payload'
-import { smsPlugin } from '@elghaied/payload-plugin-sms'
-import { mockAdapter } from '@elghaied/payload-plugin-sms/mock'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
@@ -67,8 +67,8 @@ const buildConfigWithMemoryDB = async () => {
       ensureIndexes: true,
       url: process.env.DATABASE_URL || '',
     }),
-    endpoints: [testSmsEndpoint],
     editor: lexicalEditor(),
+    endpoints: [testSmsEndpoint],
     onInit: async (payload) => {
       await seed(payload)
     },
@@ -76,8 +76,8 @@ const buildConfigWithMemoryDB = async () => {
       smsPlugin({
         adapter: devSMSAdapter,
         collections: { logs: { statusHistory: true } },
-        widgets: true,
         webhooks: { enabled: true },
+        widgets: true,
       }),
     ],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',

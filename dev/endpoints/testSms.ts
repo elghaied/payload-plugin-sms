@@ -1,8 +1,6 @@
 import type { Endpoint } from 'payload'
 
 export const testSmsEndpoint: Endpoint = {
-  path: '/test-sms',
-  method: 'get',
   handler: async (req) => {
     const url = new URL(req.url ?? 'http://localhost/api/test-sms', 'http://localhost')
     const to = url.searchParams.get('to')
@@ -13,13 +11,15 @@ export const testSmsEndpoint: Endpoint = {
     }
 
     try {
-      const result = await req.payload.sendSMS({ to, body })
+      const result = await req.payload.sendSMS({ body, to })
       return Response.json({ ok: true, result })
     } catch (err) {
       return Response.json(
-        { ok: false, error: (err as Error).message },
+        { error: (err as Error).message, ok: false },
         { status: 500 },
       )
     }
   },
+  method: 'get',
+  path: '/test-sms',
 }

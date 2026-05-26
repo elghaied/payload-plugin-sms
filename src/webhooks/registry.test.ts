@@ -1,20 +1,18 @@
 import { describe, expect, test } from 'vitest'
 
-import type { SMSAdapter, RoutedSMSAdapter, SMSWebhookHandler } from '../types.js'
+import type { RoutedSMSAdapter, SMSAdapter, SMSWebhookHandler } from '../types.js'
 
 import { assertUniquePaths, collectWebhookHandlers } from './registry.js'
 
 const stubHandler = (path?: string): SMSWebhookHandler => ({
+  parse: () => [],
   path,
   verify: () => undefined,
-  parse: () => [],
 })
 
 const stubAdapter = (name: string, webhook?: SMSWebhookHandler): SMSAdapter => ({
   name,
-  send: async () => {
-    throw new Error('not used')
-  },
+  send: () => Promise.reject(new Error('not used')),
   webhook,
 })
 
@@ -38,9 +36,7 @@ describe('collectWebhookHandlers', () => {
     const h2 = stubHandler()
     const routed: RoutedSMSAdapter = {
       name: 'router',
-      send: async () => {
-        throw new Error('not used')
-      },
+      send: () => Promise.reject(new Error('not used')),
       webhooks: [
         { adapterName: 'twilio', handler: h1 },
         { adapterName: 'telnyx', handler: h2 },

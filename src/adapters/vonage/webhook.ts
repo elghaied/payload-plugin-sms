@@ -1,6 +1,6 @@
-import { createHmac, timingSafeEqual } from 'node:crypto'
-
 import type { PayloadRequest } from 'payload'
+
+import { createHmac, timingSafeEqual } from 'node:crypto'
 
 import type { SMSStatus, SMSStatusEvent, SMSWebhookHandler } from '../../types.js'
 
@@ -9,18 +9,18 @@ import { SMSWebhookVerificationError } from '../../errors.js'
 export type VonageSignatureMethod = 'sha256hash' | 'sha512hash'
 
 export interface VonageWebhookOptions {
-  signatureSecret: string
   signatureMethod: VonageSignatureMethod
+  signatureSecret: string
 }
 
 const STATUS_MAP: Record<string, SMSStatus> = {
+  accepted: 'sent',
+  buffered: 'sent',
   delivered: 'delivered',
   expired: 'failed',
   failed: 'failed',
   rejected: 'failed',
   unknown: 'unknown',
-  accepted: 'sent',
-  buffered: 'sent',
 }
 
 const mapStatus = (s: string | undefined): SMSStatus =>
@@ -33,7 +33,7 @@ const parseForm = (raw: Buffer): Record<string, string> => {
   const text = raw.toString('utf8')
   const out: Record<string, string> = {}
   for (const pair of text.split('&')) {
-    if (!pair) continue
+    if (!pair) {continue}
     const eq = pair.indexOf('=')
     const k = eq === -1 ? pair : pair.slice(0, eq)
     const v = eq === -1 ? '' : pair.slice(eq + 1)
@@ -45,7 +45,7 @@ const parseForm = (raw: Buffer): Record<string, string> => {
 }
 
 const safeHexEqual = (a: string, b: string): boolean => {
-  if (a.length !== b.length) return false
+  if (a.length !== b.length) {return false}
   const ab = Buffer.from(a, 'utf8')
   const bb = Buffer.from(b, 'utf8')
   return timingSafeEqual(ab, bb)
@@ -75,14 +75,14 @@ export const makeVonageWebhook = (
   parse(_req: PayloadRequest, rawBody: Buffer): SMSStatusEvent[] {
     const params = parseForm(rawBody)
     const id = params.messageId
-    if (!id) return []
+    if (!id) {return []}
     const event: SMSStatusEvent = {
-      providerMessageId: id,
-      status: mapStatus(params.status),
       occurredAt: new Date(),
+      providerMessageId: id,
       raw: { ...params },
+      status: mapStatus(params.status),
     }
-    if (params['err-code']) event.errorCode = params['err-code']
+    if (params['err-code']) {event.errorCode = params['err-code']}
     return [event]
   },
 })

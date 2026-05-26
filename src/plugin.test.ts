@@ -13,8 +13,8 @@ const baseConfig = (): Config =>
 
 const runOnInit = async (config: Config): Promise<Payload> => {
   const payload = {
-    logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
     create: vi.fn().mockResolvedValue({ id: 'log-1' }),
+    logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
   } as unknown as Payload
   if (config.onInit) {
     await config.onInit(payload)
@@ -48,7 +48,7 @@ describe('smsPlugin webhook registration', () => {
     const result = smsPlugin({
       adapter: adapterWithWebhook(),
       collections: { logs: true },
-      webhooks: { enabled: true, basePath: '/notifications/sms' },
+      webhooks: { basePath: '/notifications/sms', enabled: true },
     })(baseConfig()) as Config
     const paths = (result.endpoints ?? []).map((e) => e.path)
     expect(paths).toContain('/notifications/sms/mock')
@@ -189,9 +189,9 @@ describe('smsPlugin', () => {
 
     const sendResult = await (
       payload as unknown as {
-        sendSMS: (m: { to: string; body: string }) => Promise<{ status: string }>
+        sendSMS: (m: { body: string; to: string }) => Promise<{ status: string }>
       }
-    ).sendSMS({ to: '+15551234567', body: 'hi' })
+    ).sendSMS({ body: 'hi', to: '+15551234567' })
     expect(sendResult.status).toBe('sent')
   })
 
@@ -216,8 +216,8 @@ describe('smsPlugin', () => {
     const config = baseConfig()
     const result = smsPlugin({
       adapter: mockAdapter({ defaultFrom: '+15550000000' }),
-      disabled: true,
       collections: { logs: true },
+      disabled: true,
     })(config) as Config
     expect((result.collections ?? []).find((c) => c.slug === 'sms-logs')).toBeUndefined()
     const payload = await runOnInit(result)
@@ -231,11 +231,11 @@ describe('smsPlugin', () => {
     })(baseConfig()) as Config
     const payload = await runOnInit(result)
     await (payload as unknown as {
-      sendSMS: (m: { to: string; body: string; context?: Record<string, unknown> }) => Promise<unknown>
+      sendSMS: (m: { body: string; context?: Record<string, unknown>; to: string }) => Promise<unknown>
     }).sendSMS({
-      to: '+15551234567',
       body: 'hi',
       context: { tenantId: 'acme' },
+      to: '+15551234567',
     })
     const call = (payload.create as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]
     expect(call.data.context).toEqual({ tenantId: 'acme' })

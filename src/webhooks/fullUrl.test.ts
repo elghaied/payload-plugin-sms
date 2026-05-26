@@ -10,14 +10,14 @@ const makeReq = (
 ): unknown => {
   const headers = new Headers()
   headers.set('host', host)
-  if (forwardedProto) headers.set('x-forwarded-proto', forwardedProto)
-  if (forwardedHost) headers.set('x-forwarded-host', forwardedHost)
-  return { url, headers }
+  if (forwardedProto) {headers.set('x-forwarded-proto', forwardedProto)}
+  if (forwardedHost) {headers.set('x-forwarded-host', forwardedHost)}
+  return { headers, url }
 }
 
 describe('reconstructFullUrl', () => {
   test('uses req.url host when trustProxy is false', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const req = makeReq(
       'http://internal:3000/api/sms/webhooks/twilio?x=1',
       'internal:3000',
@@ -30,7 +30,7 @@ describe('reconstructFullUrl', () => {
   })
 
   test('overrides with X-Forwarded-Proto + X-Forwarded-Host when trustProxy is true', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const req = makeReq(
       'http://internal:3000/api/sms/webhooks/twilio?x=1',
       'internal:3000',
@@ -43,7 +43,7 @@ describe('reconstructFullUrl', () => {
   })
 
   test('falls back to req.url protocol/host when trustProxy is true but forwarded headers missing', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const req = makeReq(
       'https://app.example.com/api/sms/webhooks/twilio',
       'app.example.com',
@@ -54,7 +54,7 @@ describe('reconstructFullUrl', () => {
   })
 
   test('preserves query string', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const req = makeReq(
       'https://app.example.com/api/sms/webhooks/plivo?nonce=abc',
       'app.example.com',
@@ -65,7 +65,7 @@ describe('reconstructFullUrl', () => {
   })
 
   test('parses port out of X-Forwarded-Host when present', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const req = makeReq(
       'http://internal:3000/api/sms/webhooks/twilio',
       'internal:3000',

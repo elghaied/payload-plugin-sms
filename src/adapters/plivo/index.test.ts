@@ -7,10 +7,10 @@ const messagesCreate = vi.fn()
 vi.mock('plivo', () => {
   class FakeClient {
     messages = { create: messagesCreate }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     constructor(_id: string, _token: string) {}
   }
-  return { default: { Client: FakeClient }, Client: FakeClient }
+  return { Client: FakeClient, default: { Client: FakeClient } }
 })
 
 import { plivoAdapter } from './index.js'
@@ -26,12 +26,12 @@ describe('plivoAdapter', () => {
   })
 
   test('sends via client.messages.create with src/dst/text', async () => {
-    messagesCreate.mockResolvedValue({ messageUuid: ['uuid-1'], message: 'queued' })
+    messagesCreate.mockResolvedValue({ message: 'queued', messageUuid: ['uuid-1'] })
     const a = plivoAdapter({ authId: 'a', authToken: 't' })
-    const r = await a.send({ to: '+15551234567', from: '+15550000000', body: 'hi' })
+    const r = await a.send({ body: 'hi', from: '+15550000000', to: '+15551234567' })
     expect(messagesCreate).toHaveBeenCalledWith({
-      src: '+15550000000',
       dst: '+15551234567',
+      src: '+15550000000',
       text: 'hi',
     })
     expect(r.id).toBe('uuid-1')
@@ -40,9 +40,9 @@ describe('plivoAdapter', () => {
   })
 
   test('treats string messageUuid as single id', async () => {
-    messagesCreate.mockResolvedValue({ messageUuid: 'uuid-x', message: 'queued' })
+    messagesCreate.mockResolvedValue({ message: 'queued', messageUuid: 'uuid-x' })
     const a = plivoAdapter({ authId: 'a', authToken: 't' })
-    const r = await a.send({ to: '+15551234567', from: '+15550000000', body: 'hi' })
+    const r = await a.send({ body: 'hi', from: '+15550000000', to: '+15551234567' })
     expect(r.id).toBe('uuid-x')
   })
 
@@ -50,10 +50,10 @@ describe('plivoAdapter', () => {
     messagesCreate.mockResolvedValue({ messageUuid: 'u' })
     const a = plivoAdapter({ authId: 'a', authToken: 't' })
     await a.send({
-      to: '+15551234567',
-      from: '+15550000000',
       body: 'hi',
+      from: '+15550000000',
       mediaUrls: ['https://x/a.png'],
+      to: '+15551234567',
     })
     const call = messagesCreate.mock.calls[0][0]
     expect(call.type).toBe('mms')
@@ -64,7 +64,7 @@ describe('plivoAdapter', () => {
     messagesCreate.mockRejectedValue(new Error('plivo boom'))
     const a = plivoAdapter({ authId: 'a', authToken: 't' })
     await expect(
-      a.send({ to: '+15551234567', from: '+15550000000', body: 'x' }),
+      a.send({ body: 'x', from: '+15550000000', to: '+15551234567' }),
     ).rejects.toBeInstanceOf(SMSProviderError)
   })
 })

@@ -2,15 +2,16 @@ import type { Payload } from 'payload'
 
 import { describe, expect, test } from 'vitest'
 
-import { mockAdapter } from '../adapters/mock/index.js'
-import { routerAdapter } from './index.js'
-import { withFailover } from './failover.js'
 import type { RouteArgs, RouteFunction } from './types.js'
 
+import { mockAdapter } from '../adapters/mock/index.js'
+import { withFailover } from './failover.js'
+import { routerAdapter } from './index.js'
+
 const makeArgs = (): RouteArgs => ({
-  message: { to: '+15551234567', from: '+15550000000', body: 'hi' },
-  providers: { a: mockAdapter(), b: mockAdapter(), c: mockAdapter() },
+  message: { body: 'hi', from: '+15550000000', to: '+15551234567' },
   payload: {} as Payload,
+  providers: { a: mockAdapter(), b: mockAdapter(), c: mockAdapter() },
 })
 
 describe('withFailover', () => {

@@ -31,7 +31,7 @@ const loadPlivo = async (): Promise<{
 }
 
 const buildWebhook = (opts: PlivoAdapterOptions): SMSWebhookHandler | undefined => {
-  if (opts.webhook === false) return undefined
+  if (opts.webhook === false) {return undefined}
   const baseHandler = makePlivoWebhook({
     authToken: opts.authToken,
     trustProxy: opts.webhook?.trustProxy,
@@ -44,14 +44,13 @@ const buildWebhook = (opts: PlivoAdapterOptions): SMSWebhookHandler | undefined 
 export const plivoAdapter = (opts: PlivoAdapterOptions): SMSAdapter => ({
   name: 'plivo',
   defaultFrom: opts.defaultFrom,
-  webhook: buildWebhook(opts),
   async send(message: OutboundSMSMessage): Promise<SMSResult> {
     const plivo = await loadPlivo()
     const client = new plivo.Client(opts.authId, opts.authToken)
 
     const payload: Record<string, unknown> = {
-      src: message.from,
       dst: message.to,
+      src: message.from,
       text: message.body,
     }
     if (message.mediaUrls?.length) {
@@ -65,13 +64,13 @@ export const plivoAdapter = (opts: PlivoAdapterOptions): SMSAdapter => ({
       const id = Array.isArray(rawId) ? String(rawId[0]) : String(rawId ?? '')
       return {
         id,
-        provider: 'plivo',
-        status: 'queued',
-        to: message.to,
-        from: message.from,
         body: message.body,
+        from: message.from,
+        provider: 'plivo',
         raw: response,
         sentAt: new Date(),
+        status: 'queued',
+        to: message.to,
       }
     } catch (err) {
       throw new SMSProviderError(`Plivo send failed: ${(err as Error).message}`, {
@@ -79,4 +78,5 @@ export const plivoAdapter = (opts: PlivoAdapterOptions): SMSAdapter => ({
       })
     }
   },
+  webhook: buildWebhook(opts),
 })

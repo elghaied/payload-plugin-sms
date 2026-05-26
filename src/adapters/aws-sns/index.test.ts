@@ -18,7 +18,7 @@ vi.mock('@aws-sdk/client-sns', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(_opts: any) {}
   }
-  return { SNSClient: FakeSNSClient, PublishCommand }
+  return { PublishCommand, SNSClient: FakeSNSClient }
 })
 
 import { awsSnsAdapter } from './index.js'
@@ -37,9 +37,9 @@ describe('awsSnsAdapter', () => {
   test('sends via PublishCommand with PhoneNumber + Message', async () => {
     send.mockResolvedValue({ MessageId: 'aws-1' })
     const a = awsSnsAdapter({ region: 'us-east-1' })
-    const r = await a.send({ to: '+15551234567', from: '+15550000000', body: 'hi' })
+    const r = await a.send({ body: 'hi', from: '+15550000000', to: '+15551234567' })
     expect(PublishCommand).toHaveBeenCalledTimes(1)
-    const input = PublishCommand.mock.calls[0][0] as { PhoneNumber: string; Message: string }
+    const input = PublishCommand.mock.calls[0][0] as { Message: string; PhoneNumber: string }
     expect(input.PhoneNumber).toBe('+15551234567')
     expect(input.Message).toBe('hi')
     expect(r.id).toBe('aws-1')
@@ -50,7 +50,7 @@ describe('awsSnsAdapter', () => {
   test('adds SenderID from message.from', async () => {
     send.mockResolvedValue({ MessageId: 'aws-1' })
     const a = awsSnsAdapter({ region: 'us-east-1' })
-    await a.send({ to: '+15551234567', from: 'MYBRAND', body: 'x' })
+    await a.send({ body: 'x', from: 'MYBRAND', to: '+15551234567' })
     const input = PublishCommand.mock.calls[0][0] as {
       MessageAttributes: Record<string, { StringValue: string }>
     }
@@ -60,7 +60,7 @@ describe('awsSnsAdapter', () => {
   test('uses smsType option ("Promotional")', async () => {
     send.mockResolvedValue({ MessageId: 'aws-1' })
     const a = awsSnsAdapter({ region: 'us-east-1', smsType: 'Promotional' })
-    await a.send({ to: '+15551234567', from: '+15550000000', body: 'x' })
+    await a.send({ body: 'x', from: '+15550000000', to: '+15551234567' })
     const input = PublishCommand.mock.calls[0][0] as {
       MessageAttributes: Record<string, { StringValue: string }>
     }
@@ -70,7 +70,7 @@ describe('awsSnsAdapter', () => {
   test('defaults smsType to "Transactional"', async () => {
     send.mockResolvedValue({ MessageId: 'aws-1' })
     const a = awsSnsAdapter({ region: 'us-east-1' })
-    await a.send({ to: '+15551234567', from: '+15550000000', body: 'x' })
+    await a.send({ body: 'x', from: '+15550000000', to: '+15551234567' })
     const input = PublishCommand.mock.calls[0][0] as {
       MessageAttributes: Record<string, { StringValue: string }>
     }
@@ -81,7 +81,7 @@ describe('awsSnsAdapter', () => {
     send.mockRejectedValue(new Error('sns boom'))
     const a = awsSnsAdapter({ region: 'us-east-1' })
     await expect(
-      a.send({ to: '+15551234567', from: '+15550000000', body: 'x' }),
+      a.send({ body: 'x', from: '+15550000000', to: '+15551234567' }),
     ).rejects.toBeInstanceOf(SMSProviderError)
   })
 })

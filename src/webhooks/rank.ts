@@ -1,11 +1,11 @@
 import type { SMSStatus } from '../types.js'
 
 const RANK: Record<SMSStatus, number> = {
-  unknown: -1,
-  queued: 0,
-  sent: 1,
   delivered: 2,
   failed: 99,
+  queued: 0,
+  sent: 1,
+  unknown: -1,
 }
 
 export const rankStatus = (status: SMSStatus): number => RANK[status]

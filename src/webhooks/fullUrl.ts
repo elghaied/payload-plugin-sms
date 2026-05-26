@@ -11,7 +11,7 @@ export const reconstructFullUrl = (
     const headers = (req as any).headers as Headers
     const proto = headers.get('x-forwarded-proto')
     const host = headers.get('x-forwarded-host')
-    if (proto) u.protocol = `${proto}:`
+    if (proto) {u.protocol = `${proto}:`}
     if (host) {
       const colon = host.indexOf(':')
       if (colon === -1) {

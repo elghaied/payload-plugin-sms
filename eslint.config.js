@@ -23,10 +23,17 @@ export const defaultESLintIgnores = [
 ]
 
 export default [
+  {
+    ignores: ['dev/.next/**', '**/dist/**', '**/node_modules/**'],
+  },
   ...payloadEsLintConfig,
   {
     rules: {
       'no-restricted-exports': 'off',
+      // `async` is routinely used to satisfy a `Promise<T>` return type without
+      // ceremony in test stubs, route helpers, and adapter mocks. The rule's
+      // catch — "you forgot to await something" — doesn't apply to these patterns.
+      '@typescript-eslint/require-await': 'off',
     },
   },
   {

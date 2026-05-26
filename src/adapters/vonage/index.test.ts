@@ -30,11 +30,11 @@ describe('vonageAdapter', () => {
       messages: [{ 'message-id': 'vg-1', status: '0' }],
     })
     const a = vonageAdapter({ apiKey: 'k', apiSecret: 's' })
-    const r = await a.send({ to: '+15551234567', from: '+15550000000', body: 'hi' })
+    const r = await a.send({ body: 'hi', from: '+15550000000', to: '+15551234567' })
     expect(smsSend).toHaveBeenCalledWith({
-      to: '15551234567',
       from: '15550000000',
       text: 'hi',
+      to: '15551234567',
     })
     expect(r.id).toBe('vg-1')
     expect(r.provider).toBe('vonage')
@@ -43,11 +43,11 @@ describe('vonageAdapter', () => {
 
   test('throws SMSProviderError when Vonage status is non-zero', async () => {
     smsSend.mockResolvedValue({
-      messages: [{ status: '4', 'error-text': 'bad credentials' }],
+      messages: [{ 'error-text': 'bad credentials', status: '4' }],
     })
     const a = vonageAdapter({ apiKey: 'k', apiSecret: 's' })
     await expect(
-      a.send({ to: '+15551234567', from: '+15550000000', body: 'x' }),
+      a.send({ body: 'x', from: '+15550000000', to: '+15551234567' }),
     ).rejects.toBeInstanceOf(SMSProviderError)
   })
 
@@ -55,7 +55,7 @@ describe('vonageAdapter', () => {
     smsSend.mockRejectedValue(new Error('vonage boom'))
     const a = vonageAdapter({ apiKey: 'k', apiSecret: 's' })
     await expect(
-      a.send({ to: '+15551234567', from: '+15550000000', body: 'x' }),
+      a.send({ body: 'x', from: '+15550000000', to: '+15551234567' }),
     ).rejects.toBeInstanceOf(SMSProviderError)
   })
 })

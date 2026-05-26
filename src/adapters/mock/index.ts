@@ -19,12 +19,31 @@ export interface MockAdapterOptions {
 }
 
 export interface MockAdapter extends SMSAdapter {
-  messages: Array<SMSMessage & { sentAt: Date }>
+  messages: Array<{ sentAt: Date } & SMSMessage>
   reset: () => void
   webhook: SMSWebhookHandler
 }
 
 const mockWebhook: SMSWebhookHandler = {
+  parse: (_req: PayloadRequest, rawBody: Buffer): SMSStatusEvent[] => {
+    if (rawBody.length === 0) {return []}
+    const data = JSON.parse(rawBody.toString('utf8')) as {
+      errorCode?: string
+      errorMessage?: string
+      providerMessageId: string
+      status: SMSStatus
+    }
+    return [
+      {
+        errorCode: data.errorCode,
+        errorMessage: data.errorMessage,
+        occurredAt: new Date(),
+        providerMessageId: data.providerMessageId,
+        raw: data,
+        status: data.status,
+      },
+    ]
+  },
   verify: async (req: PayloadRequest, _rawBody: Buffer): Promise<void> => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sig = ((req as any).headers as Headers).get('x-mock-signature')
@@ -32,29 +51,10 @@ const mockWebhook: SMSWebhookHandler = {
       throw new SMSWebhookVerificationError('mock: bad signature')
     }
   },
-  parse: (_req: PayloadRequest, rawBody: Buffer): SMSStatusEvent[] => {
-    if (rawBody.length === 0) return []
-    const data = JSON.parse(rawBody.toString('utf8')) as {
-      providerMessageId: string
-      status: SMSStatus
-      errorCode?: string
-      errorMessage?: string
-    }
-    return [
-      {
-        providerMessageId: data.providerMessageId,
-        status: data.status,
-        errorCode: data.errorCode,
-        errorMessage: data.errorMessage,
-        occurredAt: new Date(),
-        raw: data,
-      },
-    ]
-  },
 }
 
 export const mockAdapter = (opts: MockAdapterOptions = {}): MockAdapter => {
-  const messages: Array<SMSMessage & { sentAt: Date }> = []
+  const messages: Array<{ sentAt: Date } & SMSMessage> = []
 
   return {
     name: 'mock',
@@ -63,7 +63,6 @@ export const mockAdapter = (opts: MockAdapterOptions = {}): MockAdapter => {
     reset() {
       messages.length = 0
     },
-    webhook: mockWebhook,
     async send(message: OutboundSMSMessage): Promise<SMSResult> {
       if (opts.fail) {
         throw new SMSProviderError('mock failure')
@@ -72,14 +71,15 @@ export const mockAdapter = (opts: MockAdapterOptions = {}): MockAdapter => {
       messages.push({ ...message, sentAt })
       return {
         id: `mock-${messages.length}`,
-        provider: 'mock',
-        status: opts.status ?? 'sent',
-        to: message.to,
-        from: message.from,
         body: message.body,
+        from: message.from,
+        provider: 'mock',
         raw: { ...message },
         sentAt,
+        status: opts.status ?? 'sent',
+        to: message.to,
       }
     },
+    webhook: mockWebhook,
   }
 }

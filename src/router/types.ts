@@ -6,17 +6,17 @@ export type ProviderName = string
 
 export interface RouteArgs {
   message: OutboundSMSMessage
-  providers: Readonly<Record<ProviderName, SMSAdapter>>
   payload: Payload
+  providers: Readonly<Record<ProviderName, SMSAdapter>>
 }
 
 export type RouteResult = ProviderName | ProviderName[]
 
 export type RouteFunction =
-  (args: RouteArgs) => RouteResult | Promise<RouteResult>
+  (args: RouteArgs) => Promise<RouteResult> | RouteResult
 
 export interface RouterAdapterOptions {
+  defaultFrom?: string
   providers: Record<ProviderName, SMSAdapter>
   route: RouteFunction
-  defaultFrom?: string
 }

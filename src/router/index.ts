@@ -6,10 +6,9 @@ import type {
   SMSResult,
   SMSWebhookHandler,
 } from '../types.js'
+import type { RouteArgs, RouterAdapterOptions, RouteResult } from './types.js'
 
 import { SMSProviderError, SMSValidationError } from '../errors.js'
-
-import type { RouteArgs, RouteResult, RouterAdapterOptions } from './types.js'
 
 export const routerAdapter = (opts: RouterAdapterOptions): RoutedSMSAdapter => {
   const providers = Object.freeze({ ...opts.providers })
@@ -25,11 +24,10 @@ export const routerAdapter = (opts: RouterAdapterOptions): RoutedSMSAdapter => {
   return {
     name: 'router',
     defaultFrom: opts.defaultFrom,
-    webhooks,
     async init(payload: Payload): Promise<void> {
       payloadRef = payload
       for (const adapter of Object.values(providers)) {
-        if (adapter.init) await adapter.init(payload)
+        if (adapter.init) {await adapter.init(payload)}
       }
     },
     async send(message: OutboundSMSMessage): Promise<SMSResult> {
@@ -72,16 +70,17 @@ export const routerAdapter = (opts: RouterAdapterOptions): RoutedSMSAdapter => {
         { cause: errors as unknown },
       )
     },
+    webhooks,
   }
 }
 
-export { byTenantLookup, byCountryPrefix, byRoundRobin, byRandom } from './helpers.js'
 export { withFailover } from './failover.js'
+export { byCountryPrefix, byRandom, byRoundRobin, byTenantLookup } from './helpers.js'
+export type { ByCountryPrefixOptions, ByTenantLookupOptions } from './helpers.js'
 export type {
   ProviderName,
   RouteArgs,
   RouteFunction,
-  RouteResult,
   RouterAdapterOptions,
+  RouteResult,
 } from './types.js'
-export type { ByTenantLookupOptions, ByCountryPrefixOptions } from './helpers.js'

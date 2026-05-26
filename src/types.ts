@@ -1,13 +1,13 @@
 import type { Payload, PayloadRequest } from 'payload'
 
-export type SMSStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'unknown'
+export type SMSStatus = 'delivered' | 'failed' | 'queued' | 'sent' | 'unknown'
 
 export interface SMSMessage {
-  to: string
-  from?: string
   body: string
-  mediaUrls?: string[]
   context?: Record<string, unknown>
+  from?: string
+  mediaUrls?: string[]
+  to: string
 }
 
 /** Internal — passed to adapter.send after `from` is resolved by sendSMS. */
@@ -21,43 +21,43 @@ export interface SMSCost {
 }
 
 export interface SMSResult {
+  body: string
+  context?: Record<string, unknown>
+  cost?: SMSCost
+  from: string
   id: string
   provider: string
+  raw: unknown
+  sentAt: Date
   status: SMSStatus
   to: string
-  from: string
-  body: string
-  cost?: SMSCost
-  raw: unknown
-  context?: Record<string, unknown>
-  sentAt: Date
 }
 
 /** Status event parsed from a provider webhook. */
 export interface SMSStatusEvent {
-  providerMessageId: string
-  status: SMSStatus
+  cost?: SMSCost
   errorCode?: string
   errorMessage?: string
-  cost?: SMSCost
   occurredAt: Date
+  providerMessageId: string
   raw: unknown
+  status: SMSStatus
 }
 
 export interface SMSWebhookHandler {
+  /** Parse one or more status events from the raw body. */
+  parse: (req: PayloadRequest, rawBody: Buffer) => Promise<SMSStatusEvent[]> | SMSStatusEvent[]
   /** URL path segment under basePath. Defaults to adapter.name. */
   path?: string
   /** Verify signature against raw body + headers. Throws SMSWebhookVerificationError on failure. */
   verify: (req: PayloadRequest, rawBody: Buffer) => Promise<void> | void
-  /** Parse one or more status events from the raw body. */
-  parse: (req: PayloadRequest, rawBody: Buffer) => Promise<SMSStatusEvent[]> | SMSStatusEvent[]
 }
 
 export interface SMSAdapter {
-  name: string
   defaultFrom?: string
+  init?: (payload: Payload) => Promise<void> | void
+  name: string
   send: (message: OutboundSMSMessage) => Promise<SMSResult>
-  init?: (payload: Payload) => void | Promise<void>
   webhook?: SMSWebhookHandler
 }
 
@@ -67,40 +67,40 @@ export interface RoutedSMSAdapter extends SMSAdapter {
 }
 
 export interface SMSLogsCollectionOptions {
-  slug?: string
   admin?: Record<string, unknown>
   includeContext?: boolean
+  slug?: string
   statusHistory?: boolean
 }
 
 export interface SMSWebhooksConfig {
-  enabled: boolean
   basePath?: string
+  enabled: boolean
   trustProxy?: boolean
   verifySignature?: boolean
 }
 
 export interface SMSPluginConfig {
   adapter?: SMSAdapter
-  defaultFrom?: string
-  disabled?: boolean
   collections?: {
     logs?: boolean | SMSLogsCollectionOptions
   }
-  widgets?: boolean
-  webhooks?: SMSWebhooksConfig
-  onSend?: (args: {
-    result: SMSResult
-    req: PayloadRequest | undefined
-  }) => void | Promise<void>
+  defaultFrom?: string
+  disabled?: boolean
   onError?: (args: {
     error: Error
     message: SMSMessage
     req: PayloadRequest | undefined
-  }) => void | Promise<void>
+  }) => Promise<void> | void
+  onSend?: (args: {
+    req: PayloadRequest | undefined
+    result: SMSResult
+  }) => Promise<void> | void
   onStatus?: (args: {
     event: SMSStatusEvent
-    log: Record<string, unknown> | null
+    log: null | Record<string, unknown>
     req: PayloadRequest
-  }) => void | Promise<void>
+  }) => Promise<void> | void
+  webhooks?: SMSWebhooksConfig
+  widgets?: boolean
 }

@@ -23,16 +23,16 @@ export interface TwilioAdapterOptions {
 }
 
 const STATUS_MAP: Record<string, SMSStatus> = {
+  delivered: 'delivered',
+  failed: 'failed',
   queued: 'queued',
+  received: 'delivered',
   sending: 'sent',
   sent: 'sent',
-  delivered: 'delivered',
-  received: 'delivered',
-  failed: 'failed',
   undelivered: 'failed',
 }
 
-const mapStatus = (s: string | null | undefined): SMSStatus =>
+const mapStatus = (s: null | string | undefined): SMSStatus =>
   s ? (STATUS_MAP[s] ?? 'unknown') : 'unknown'
 
 const loadTwilio = async (): Promise<(sid: string, token: string) => unknown> => {
@@ -49,7 +49,7 @@ const loadTwilio = async (): Promise<(sid: string, token: string) => unknown> =>
 }
 
 const buildWebhook = (opts: TwilioAdapterOptions): SMSWebhookHandler | undefined => {
-  if (opts.webhook === false) return undefined
+  if (opts.webhook === false) {return undefined}
   const baseHandler = makeTwilioWebhook({
     authToken: opts.authToken,
     trustProxy: opts.webhook?.trustProxy,
@@ -62,15 +62,14 @@ const buildWebhook = (opts: TwilioAdapterOptions): SMSWebhookHandler | undefined
 export const twilioAdapter = (opts: TwilioAdapterOptions): SMSAdapter => ({
   name: 'twilio',
   defaultFrom: opts.defaultFrom,
-  webhook: buildWebhook(opts),
   async send(message: OutboundSMSMessage): Promise<SMSResult> {
     const twilio = await loadTwilio()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const client = twilio(opts.accountSid, opts.authToken) as any
 
     const payload: Record<string, unknown> = {
-      to: message.to,
       body: message.body,
+      to: message.to,
     }
     if (opts.messagingServiceSid) {
       payload.messagingServiceSid = opts.messagingServiceSid
@@ -86,13 +85,13 @@ export const twilioAdapter = (opts: TwilioAdapterOptions): SMSAdapter => ({
       const sentAt = new Date()
       const result: SMSResult = {
         id: String(response.sid),
-        provider: 'twilio',
-        status: mapStatus(response.status),
-        to: message.to,
-        from: message.from,
         body: message.body,
+        from: message.from,
+        provider: 'twilio',
         raw: response,
         sentAt,
+        status: mapStatus(response.status),
+        to: message.to,
       }
       if (response.price && response.priceUnit) {
         result.cost = { amount: String(response.price), currency: String(response.priceUnit) }
@@ -104,4 +103,5 @@ export const twilioAdapter = (opts: TwilioAdapterOptions): SMSAdapter => ({
       })
     }
   },
+  webhook: buildWebhook(opts),
 })

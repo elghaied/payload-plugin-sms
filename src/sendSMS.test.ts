@@ -1,18 +1,19 @@
+import type { Payload } from 'payload'
+
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 
+import { mockAdapter } from './adapters/mock/index.js'
 import { SMSProviderError, SMSValidationError } from './errors.js'
 import { makeSendSMS } from './sendSMS.js'
-import { mockAdapter } from './adapters/mock/index.js'
-import type { Payload } from 'payload'
 
 const stubPayload = (): Payload => {
   return {
-    logger: {
-      warn: vi.fn(),
-      info: vi.fn(),
-      error: vi.fn(),
-    },
     create: vi.fn().mockResolvedValue({ id: 'log-1' }),
+    logger: {
+      error: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+    },
   } as unknown as Payload
 }
 
@@ -25,7 +26,7 @@ describe('sendSMS', () => {
 
   test('throws SMSValidationError when no adapter configured', async () => {
     const send = makeSendSMS({ payload, pluginConfig: {} })
-    await expect(send({ to: '+15551234567', body: 'x' })).rejects.toBeInstanceOf(
+    await expect(send({ body: 'x', to: '+15551234567' })).rejects.toBeInstanceOf(
       SMSValidationError,
     )
   })
@@ -33,13 +34,13 @@ describe('sendSMS', () => {
   test('throws SMSValidationError for non-E.164 `to`', async () => {
     const adapter = mockAdapter({ defaultFrom: '+15550000000' })
     const send = makeSendSMS({ payload, pluginConfig: { adapter } })
-    await expect(send({ to: '5551234567', body: 'x' })).rejects.toBeInstanceOf(
+    await expect(send({ body: 'x', to: '5551234567' })).rejects.toBeInstanceOf(
       SMSValidationError,
     )
-    await expect(send({ to: '+0551234567', body: 'x' })).rejects.toBeInstanceOf(
+    await expect(send({ body: 'x', to: '+0551234567' })).rejects.toBeInstanceOf(
       SMSValidationError,
     )
-    await expect(send({ to: '', body: 'x' })).rejects.toBeInstanceOf(SMSValidationError)
+    await expect(send({ body: 'x', to: '' })).rejects.toBeInstanceOf(SMSValidationError)
   })
 
   test('resolves `from`: message > plugin > adapter', async () => {
@@ -49,21 +50,21 @@ describe('sendSMS', () => {
       pluginConfig: { adapter, defaultFrom: '+15558888888' },
     })
 
-    const r1 = await send({ to: '+15551234567', from: '+15557777777', body: 'a' })
+    const r1 = await send({ body: 'a', from: '+15557777777', to: '+15551234567' })
     expect(r1.from).toBe('+15557777777')
 
-    const r2 = await send({ to: '+15551234567', body: 'b' })
+    const r2 = await send({ body: 'b', to: '+15551234567' })
     expect(r2.from).toBe('+15558888888')
 
     const send2 = makeSendSMS({ payload, pluginConfig: { adapter } })
-    const r3 = await send2({ to: '+15551234567', body: 'c' })
+    const r3 = await send2({ body: 'c', to: '+15551234567' })
     expect(r3.from).toBe('+15559999999')
   })
 
   test('throws SMSValidationError when no `from` is resolvable', async () => {
     const adapter = mockAdapter() // no defaultFrom
     const send = makeSendSMS({ payload, pluginConfig: { adapter } })
-    await expect(send({ to: '+15551234567', body: 'x' })).rejects.toBeInstanceOf(
+    await expect(send({ body: 'x', to: '+15551234567' })).rejects.toBeInstanceOf(
       SMSValidationError,
     )
   })
@@ -71,11 +72,11 @@ describe('sendSMS', () => {
   test('writes log entry when logsSlug provided', async () => {
     const adapter = mockAdapter({ defaultFrom: '+15550000000' })
     const send = makeSendSMS({
+      logsSlug: 'sms-logs',
       payload,
       pluginConfig: { adapter },
-      logsSlug: 'sms-logs',
     })
-    await send({ to: '+15551234567', body: 'hi' })
+    await send({ body: 'hi', to: '+15551234567' })
     expect(payload.create).toHaveBeenCalledTimes(1)
     const call = (payload.create as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]
     expect(call.collection).toBe('sms-logs')
@@ -90,11 +91,11 @@ describe('sendSMS', () => {
       new Error('db down'),
     )
     const send = makeSendSMS({
+      logsSlug: 'sms-logs',
       payload,
       pluginConfig: { adapter },
-      logsSlug: 'sms-logs',
     })
-    const result = await send({ to: '+15551234567', body: 'hi' })
+    const result = await send({ body: 'hi', to: '+15551234567' })
     expect(result.status).toBe('sent')
     expect(payload.logger.warn).toHaveBeenCalled()
   })
@@ -103,7 +104,7 @@ describe('sendSMS', () => {
     const adapter = mockAdapter({ defaultFrom: '+15550000000' })
     const onSend = vi.fn()
     const send = makeSendSMS({ payload, pluginConfig: { adapter, onSend } })
-    await send({ to: '+15551234567', body: 'hi' })
+    await send({ body: 'hi', to: '+15551234567' })
     expect(onSend).toHaveBeenCalledTimes(1)
     const call = onSend.mock.calls[0][0]
     expect(call.result.to).toBe('+15551234567')
@@ -114,7 +115,7 @@ describe('sendSMS', () => {
     const adapter = mockAdapter({ defaultFrom: '+15550000000', fail: true })
     const onError = vi.fn()
     const send = makeSendSMS({ payload, pluginConfig: { adapter, onError } })
-    await expect(send({ to: '+15551234567', body: 'hi' })).rejects.toBeInstanceOf(
+    await expect(send({ body: 'hi', to: '+15551234567' })).rejects.toBeInstanceOf(
       SMSProviderError,
     )
     expect(onError).toHaveBeenCalledTimes(1)
@@ -126,7 +127,7 @@ describe('sendSMS', () => {
     const adapter = mockAdapter({ defaultFrom: '+15550000000' })
     const onSend = vi.fn().mockRejectedValue(new Error('hook boom'))
     const send = makeSendSMS({ payload, pluginConfig: { adapter, onSend } })
-    const result = await send({ to: '+15551234567', body: 'hi' })
+    const result = await send({ body: 'hi', to: '+15551234567' })
     expect(result.status).toBe('sent')
     expect(payload.logger.warn).toHaveBeenCalled()
   })
@@ -135,9 +136,9 @@ describe('sendSMS', () => {
     const adapter = mockAdapter({ defaultFrom: '+15550000000' })
     const send = makeSendSMS({ payload, pluginConfig: { adapter } })
     const result = await send({
-      to: '+15551234567',
       body: 'hi',
       context: { tenantId: 'acme' },
+      to: '+15551234567',
     })
     expect(result.context).toEqual({ tenantId: 'acme' })
   })
@@ -151,9 +152,9 @@ describe('sendSMS', () => {
     }
     const send = makeSendSMS({ payload, pluginConfig: { adapter } })
     const result = await send({
-      to: '+15551234567',
       body: 'hi',
       context: { tenantId: 'acme' },
+      to: '+15551234567',
     })
     expect(result.context).toEqual({ source: 'adapter' })
   })
@@ -161,15 +162,15 @@ describe('sendSMS', () => {
   test('writes context into log row when logsIncludeContext is true', async () => {
     const adapter = mockAdapter({ defaultFrom: '+15550000000' })
     const send = makeSendSMS({
+      logsIncludeContext: true,
+      logsSlug: 'sms-logs',
       payload,
       pluginConfig: { adapter },
-      logsSlug: 'sms-logs',
-      logsIncludeContext: true,
     })
     await send({
-      to: '+15551234567',
       body: 'hi',
       context: { tenantId: 'acme' },
+      to: '+15551234567',
     })
     const call = (payload.create as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]
     expect(call.data.context).toEqual({ tenantId: 'acme' })
@@ -178,14 +179,14 @@ describe('sendSMS', () => {
   test('does not write context into log row when logsIncludeContext is false', async () => {
     const adapter = mockAdapter({ defaultFrom: '+15550000000' })
     const send = makeSendSMS({
+      logsSlug: 'sms-logs',
       payload,
       pluginConfig: { adapter },
-      logsSlug: 'sms-logs',
     })
     await send({
-      to: '+15551234567',
       body: 'hi',
       context: { tenantId: 'acme' },
+      to: '+15551234567',
     })
     const call = (payload.create as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]
     expect(call.data.context).toBeUndefined()

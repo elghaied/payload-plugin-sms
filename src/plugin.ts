@@ -14,7 +14,7 @@ import {
 const resolveLogsSlug = (
   logs: boolean | SMSLogsCollectionOptions | undefined,
 ): string => {
-  if (typeof logs === 'object' && logs?.slug) return logs.slug
+  if (typeof logs === 'object' && logs?.slug) {return logs.slug}
   return 'sms-logs'
 }
 
@@ -38,7 +38,7 @@ export const smsPlugin =
     if (pluginConfig.disabled) {
       const prevOnInit = config.onInit
       config.onInit = async (payload) => {
-        if (prevOnInit) await prevOnInit(payload)
+        if (prevOnInit) {await prevOnInit(payload)}
         payload.logger.warn('payload-plugin-sms: disabled')
       }
       return config
@@ -69,8 +69,8 @@ export const smsPlugin =
           {
             slug: 'sms-recent-logs',
             Component: '@elghaied/payload-plugin-sms/rsc#SMSLogsWidget',
-            minWidth: 'small',
             maxWidth: 'medium',
+            minWidth: 'small',
           },
         ],
       }
@@ -90,19 +90,19 @@ export const smsPlugin =
     if (webhookHandlers.length > 0) {
       const newEndpoints: Endpoint[] = webhookHandlers.map(
         ({ adapterName, handler }) => ({
-          path: `${basePath}/${resolvePath({ adapterName, handler })}`,
-          method: 'post' as const,
           handler: async (req) => {
             const handlerFn = makeWebhookEndpointHandler({
-              handler,
               adapterName,
+              handler,
+              logsIncludeStatusHistory,
+              logsSlug: logsEnabled ? logsSlug : undefined,
               payload: req.payload,
               pluginConfig,
-              logsSlug: logsEnabled ? logsSlug : undefined,
-              logsIncludeStatusHistory,
             })
             return handlerFn(req)
           },
+          method: 'post' as const,
+          path: `${basePath}/${resolvePath({ adapterName, handler })}`,
         }),
       )
       config.endpoints = [...(config.endpoints ?? []), ...newEndpoints]
@@ -110,7 +110,7 @@ export const smsPlugin =
 
     const prevOnInit = config.onInit
     config.onInit = async (payload) => {
-      if (prevOnInit) await prevOnInit(payload)
+      if (prevOnInit) {await prevOnInit(payload)}
       if (!pluginConfig.adapter) {
         payload.logger.warn(
           'payload-plugin-sms: no adapter configured; payload.sendSMS will throw',
@@ -143,10 +143,10 @@ export const smsPlugin =
       }
 
       payload.sendSMS = makeSendSMS({
+        logsIncludeContext: logsEnabled ? logsIncludeContext : undefined,
+        logsSlug: logsEnabled ? logsSlug : undefined,
         payload,
         pluginConfig,
-        logsSlug: logsEnabled ? logsSlug : undefined,
-        logsIncludeContext: logsEnabled ? logsIncludeContext : undefined,
       })
     }
 

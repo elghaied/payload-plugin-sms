@@ -2,8 +2,8 @@ import { describe, expect, test } from 'vitest'
 
 import { readRawBody } from './rawBody.js'
 
-const makeReq = (body: string | null): { body: ReadableStream<Uint8Array> | null } => {
-  if (body === null) return { body: null }
+const makeReq = (body: null | string): { body: null | ReadableStream<Uint8Array> } => {
+  if (body === null) {return { body: null }}
   const enc = new TextEncoder().encode(body)
   return {
     body: new ReadableStream<Uint8Array>({

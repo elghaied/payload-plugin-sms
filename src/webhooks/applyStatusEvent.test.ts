@@ -1,32 +1,32 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest'
-
 import type { Payload, PayloadRequest } from 'payload'
+
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { applyStatusEvent } from './applyStatusEvent.js'
 
 const stubPayload = (
-  existingDoc: Record<string, unknown> | null,
+  existingDoc: null | Record<string, unknown>,
 ): Payload => {
   const find = vi.fn().mockResolvedValue({
     docs: existingDoc ? [existingDoc] : [],
   })
   const update = vi.fn().mockResolvedValue({ id: 'log-1' })
   return {
-    logger: {
-      warn: vi.fn(),
-      info: vi.fn(),
-      error: vi.fn(),
-    },
     find,
+    logger: {
+      error: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+    },
     update,
   } as unknown as Payload
 }
 
 const baseEvent = {
-  providerMessageId: 'SM123',
-  status: 'delivered' as const,
   occurredAt: new Date('2026-05-26T12:00:00Z'),
+  providerMessageId: 'SM123',
   raw: { ok: true },
+  status: 'delivered' as const,
 }
 
 const stubReq = () => ({}) as PayloadRequest
@@ -37,40 +37,40 @@ describe('applyStatusEvent', () => {
   beforeEach(() => {
     payload = stubPayload({
       id: 'log-1',
-      status: 'sent',
       providerMessageId: 'SM123',
+      status: 'sent',
     })
   })
 
   test('looks up by providerMessageId + provider', async () => {
     await applyStatusEvent({
-      payload,
-      logsSlug: 'sms-logs',
       adapterName: 'twilio',
       event: baseEvent,
+      logsIncludeStatusHistory: false,
+      logsSlug: 'sms-logs',
+      payload,
       pluginConfig: {},
       req: stubReq(),
-      logsIncludeStatusHistory: false,
     })
     expect(payload.find).toHaveBeenCalledWith({
       collection: 'sms-logs',
-      where: {
-        providerMessageId: { equals: 'SM123' },
-        provider: { equals: 'twilio' },
-      },
       limit: 1,
+      where: {
+        provider: { equals: 'twilio' },
+        providerMessageId: { equals: 'SM123' },
+      },
     })
   })
 
   test('updates status, sets deliveredAt when status becomes delivered', async () => {
     await applyStatusEvent({
-      payload,
-      logsSlug: 'sms-logs',
       adapterName: 'twilio',
       event: baseEvent,
+      logsIncludeStatusHistory: false,
+      logsSlug: 'sms-logs',
+      payload,
       pluginConfig: {},
       req: stubReq(),
-      logsIncludeStatusHistory: false,
     })
     const call = (payload.update as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]
     expect(call.collection).toBe('sms-logs')
@@ -82,21 +82,21 @@ describe('applyStatusEvent', () => {
 
   test('sets failedAt + errorCode + error message when status becomes failed', async () => {
     const event = {
-      providerMessageId: 'SM123',
-      status: 'failed' as const,
       errorCode: '30005',
       errorMessage: 'Unknown destination',
       occurredAt: new Date(),
+      providerMessageId: 'SM123',
       raw: {},
+      status: 'failed' as const,
     }
     await applyStatusEvent({
-      payload,
-      logsSlug: 'sms-logs',
       adapterName: 'twilio',
       event,
+      logsIncludeStatusHistory: false,
+      logsSlug: 'sms-logs',
+      payload,
       pluginConfig: {},
       req: stubReq(),
-      logsIncludeStatusHistory: false,
     })
     const call = (payload.update as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]
     expect(call.data.status).toBe('failed')
@@ -108,13 +108,13 @@ describe('applyStatusEvent', () => {
   test('drops stale event (delivered -> sent) silently and does not call update', async () => {
     payload = stubPayload({ id: 'log-1', status: 'delivered' })
     await applyStatusEvent({
-      payload,
-      logsSlug: 'sms-logs',
       adapterName: 'twilio',
       event: { ...baseEvent, status: 'sent' },
+      logsIncludeStatusHistory: false,
+      logsSlug: 'sms-logs',
+      payload,
       pluginConfig: {},
       req: stubReq(),
-      logsIncludeStatusHistory: false,
     })
     expect(payload.update).not.toHaveBeenCalled()
   })
@@ -122,13 +122,13 @@ describe('applyStatusEvent', () => {
   test('failed is terminal — later delivered does not overwrite', async () => {
     payload = stubPayload({ id: 'log-1', status: 'failed' })
     await applyStatusEvent({
-      payload,
-      logsSlug: 'sms-logs',
       adapterName: 'twilio',
       event: { ...baseEvent, status: 'delivered' },
+      logsIncludeStatusHistory: false,
+      logsSlug: 'sms-logs',
+      payload,
       pluginConfig: {},
       req: stubReq(),
-      logsIncludeStatusHistory: false,
     })
     expect(payload.update).not.toHaveBeenCalled()
   })
@@ -137,13 +137,13 @@ describe('applyStatusEvent', () => {
     payload = stubPayload(null)
     const onStatus = vi.fn()
     await applyStatusEvent({
-      payload,
-      logsSlug: 'sms-logs',
       adapterName: 'twilio',
       event: baseEvent,
+      logsIncludeStatusHistory: false,
+      logsSlug: 'sms-logs',
+      payload,
       pluginConfig: { onStatus },
       req: stubReq(),
-      logsIncludeStatusHistory: false,
     })
     expect(payload.logger.warn).toHaveBeenCalled()
     expect(payload.update).not.toHaveBeenCalled()
@@ -156,16 +156,16 @@ describe('applyStatusEvent', () => {
     payload = stubPayload({
       id: 'log-1',
       status: 'delivered',
-      statusHistory: [{ status: 'sent', occurredAt: new Date(), errorCode: null }],
+      statusHistory: [{ errorCode: null, occurredAt: new Date(), status: 'sent' }],
     })
     await applyStatusEvent({
-      payload,
-      logsSlug: 'sms-logs',
       adapterName: 'twilio',
       event: { ...baseEvent, status: 'sent' },
+      logsIncludeStatusHistory: true,
+      logsSlug: 'sms-logs',
+      payload,
       pluginConfig: {},
       req: stubReq(),
-      logsIncludeStatusHistory: true,
     })
     const call = (payload.update as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]
     expect(call.data.statusHistory).toHaveLength(2)
@@ -176,13 +176,13 @@ describe('applyStatusEvent', () => {
   test('calls onStatus with updated log after DB write', async () => {
     const onStatus = vi.fn()
     await applyStatusEvent({
-      payload,
-      logsSlug: 'sms-logs',
       adapterName: 'twilio',
       event: baseEvent,
+      logsIncludeStatusHistory: false,
+      logsSlug: 'sms-logs',
+      payload,
       pluginConfig: { onStatus },
       req: stubReq(),
-      logsIncludeStatusHistory: false,
     })
     expect(onStatus).toHaveBeenCalledTimes(1)
     const call = onStatus.mock.calls[0][0]
@@ -193,41 +193,41 @@ describe('applyStatusEvent', () => {
   test('onStatus throwing only warns', async () => {
     const onStatus = vi.fn().mockRejectedValue(new Error('hook boom'))
     await applyStatusEvent({
-      payload,
-      logsSlug: 'sms-logs',
       adapterName: 'twilio',
       event: baseEvent,
+      logsIncludeStatusHistory: false,
+      logsSlug: 'sms-logs',
+      payload,
       pluginConfig: { onStatus },
       req: stubReq(),
-      logsIncludeStatusHistory: false,
     })
     expect(payload.logger.warn).toHaveBeenCalled()
   })
 
   test('skips DB writes when logsSlug is undefined', async () => {
     await applyStatusEvent({
-      payload,
-      logsSlug: undefined,
       adapterName: 'twilio',
       event: baseEvent,
+      logsIncludeStatusHistory: false,
+      logsSlug: undefined,
+      payload,
       pluginConfig: {},
       req: stubReq(),
-      logsIncludeStatusHistory: false,
     })
     expect(payload.find).not.toHaveBeenCalled()
     expect(payload.update).not.toHaveBeenCalled()
   })
 
   test('updates cost when event provides one and existing row has none', async () => {
-    payload = stubPayload({ id: 'log-1', status: 'sent', cost: undefined })
+    payload = stubPayload({ id: 'log-1', cost: undefined, status: 'sent' })
     await applyStatusEvent({
-      payload,
-      logsSlug: 'sms-logs',
       adapterName: 'twilio',
       event: { ...baseEvent, cost: { amount: '0.0075', currency: 'USD' } },
+      logsIncludeStatusHistory: false,
+      logsSlug: 'sms-logs',
+      payload,
       pluginConfig: {},
       req: stubReq(),
-      logsIncludeStatusHistory: false,
     })
     const call = (payload.update as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]
     expect(call.data.cost).toEqual({ amount: '0.0075', currency: 'USD' })
