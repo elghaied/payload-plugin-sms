@@ -43,10 +43,10 @@ export const awsSnsAdapter = (opts: AwsSnsAdapterOptions): SMSAdapter => ({
         StringValue: opts.smsType ?? 'Transactional',
       },
     }
-    if (opts.defaultFrom) {
+    if (message.from) {
       attributes['AWS.SNS.SMS.SenderID'] = {
         DataType: 'String',
-        StringValue: opts.defaultFrom,
+        StringValue: message.from,
       }
     }
 

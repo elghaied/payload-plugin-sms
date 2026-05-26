@@ -47,10 +47,10 @@ describe('awsSnsAdapter', () => {
     expect(r.status).toBe('sent')
   })
 
-  test('adds SenderID when defaultFrom set', async () => {
+  test('adds SenderID from message.from', async () => {
     send.mockResolvedValue({ MessageId: 'aws-1' })
-    const a = awsSnsAdapter({ region: 'us-east-1', defaultFrom: 'MYBRAND' })
-    await a.send({ to: '+15551234567', from: '+15550000000', body: 'x' })
+    const a = awsSnsAdapter({ region: 'us-east-1' })
+    await a.send({ to: '+15551234567', from: 'MYBRAND', body: 'x' })
     const input = PublishCommand.mock.calls[0][0] as {
       MessageAttributes: Record<string, { StringValue: string }>
     }

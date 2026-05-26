@@ -69,6 +69,16 @@ describe('smsPlugin', () => {
     expect(widgets.find((w) => w.slug === 'sms-recent-logs')).toBeUndefined()
   })
 
+  test('does not register widget when slug is overridden', () => {
+    const result = smsPlugin({
+      adapter: mockAdapter({ defaultFrom: '+15550000000' }),
+      collections: { logs: { slug: 'audit-sms' } },
+      widgets: true,
+    })(baseConfig()) as Config
+    const widgets = result.admin?.dashboard?.widgets ?? []
+    expect(widgets.find((w) => w.slug === 'sms-recent-logs')).toBeUndefined()
+  })
+
   test('does not register widget when logs disabled', () => {
     const result = smsPlugin({
       adapter: mockAdapter({ defaultFrom: '+15550000000' }),

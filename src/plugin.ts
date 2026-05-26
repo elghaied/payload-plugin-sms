@@ -34,7 +34,8 @@ export const smsPlugin =
       ]
     }
 
-    const widgetsEnabled = pluginConfig.widgets !== false && logsEnabled
+    const customLogsSlug = logsSlug !== 'sms-logs'
+    const widgetsEnabled = pluginConfig.widgets !== false && logsEnabled && !customLogsSlug
     if (widgetsEnabled) {
       config.admin = config.admin ?? {}
       config.admin.dashboard = {
@@ -57,6 +58,11 @@ export const smsPlugin =
       if (!pluginConfig.adapter) {
         payload.logger.warn(
           'payload-plugin-sms: no adapter configured; payload.sendSMS will throw',
+        )
+      }
+      if (customLogsSlug && pluginConfig.widgets !== false && pluginConfig.widgets !== undefined) {
+        payload.logger.warn(
+          'payload-plugin-sms: dashboard widget hard-codes the "sms-logs" slug; set widgets: false explicitly or use the default slug to silence this warning',
         )
       }
       payload.sendSMS = makeSendSMS({
