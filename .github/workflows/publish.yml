@@ -1,4 +1,4 @@
-name: Publish to GitHub Packages
+name: Publish to npm
 
 on:
   release:
@@ -6,7 +6,7 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  id-token: write   # required for npm provenance
 
 jobs:
   publish:
@@ -21,8 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://npm.pkg.github.com
-          scope: '@elghaied'
+          registry-url: https://registry.npmjs.org
           cache: pnpm
 
       - name: Install dependencies
@@ -38,6 +37,6 @@ jobs:
         run: pnpm build
 
       - name: Publish
-        run: pnpm publish --no-git-checks
+        run: pnpm publish --no-git-checks --access=public --provenance
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

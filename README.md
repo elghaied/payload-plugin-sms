@@ -6,19 +6,9 @@ Architecture mirrors `@payloadcms/email-nodemailer`: a thin core defines an adap
 
 ## Install
 
-Published to the GitHub Packages npm registry. Tell npm/pnpm where to find the `@elghaied` scope by adding to your project's `.npmrc`:
-
-```ini
-@elghaied:registry=https://npm.pkg.github.com
-```
-
-Then install:
-
 ```bash
 pnpm add @elghaied/payload-plugin-sms
 ```
-
-> Installing requires a personal access token with `read:packages` scope, configured as `//npm.pkg.github.com/:_authToken=...` in your `~/.npmrc`. See the [GitHub Packages docs](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry#authenticating-to-github-packages).
 
 Then install the SDK for your chosen provider:
 
