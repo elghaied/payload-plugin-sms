@@ -1,9 +1,15 @@
-import type { Config, Plugin } from 'payload'
+import type { Config, Endpoint, Plugin } from 'payload'
 
 import type { SMSLogsCollectionOptions, SMSPluginConfig } from './types.js'
 
 import { buildSMSLogsCollection } from './collections/SMSLogs.js'
 import { makeSendSMS } from './sendSMS.js'
+import { makeWebhookEndpointHandler } from './webhooks/endpoint.js'
+import {
+  assertUniquePaths,
+  collectWebhookHandlers,
+  resolvePath,
+} from './webhooks/registry.js'
 
 const resolveLogsSlug = (
   logs: boolean | SMSLogsCollectionOptions | undefined,
@@ -17,6 +23,13 @@ const resolveLogsIncludeContext = (
 ): boolean =>
   typeof logs === 'object' && logs !== null
     ? Boolean(logs.includeContext)
+    : false
+
+const resolveLogsIncludeStatusHistory = (
+  logs: boolean | SMSLogsCollectionOptions | undefined,
+): boolean =>
+  typeof logs === 'object' && logs !== null
+    ? Boolean(logs.statusHistory)
     : false
 
 export const smsPlugin =
@@ -34,6 +47,9 @@ export const smsPlugin =
     const logsEnabled = Boolean(pluginConfig.collections?.logs)
     const logsSlug = resolveLogsSlug(pluginConfig.collections?.logs)
     const logsIncludeContext = resolveLogsIncludeContext(pluginConfig.collections?.logs)
+    const logsIncludeStatusHistory = resolveLogsIncludeStatusHistory(
+      pluginConfig.collections?.logs,
+    )
 
     if (logsEnabled) {
       config.collections = [
@@ -60,6 +76,38 @@ export const smsPlugin =
       }
     }
 
+    const webhooksEnabled = pluginConfig.webhooks?.enabled === true
+    const basePath = pluginConfig.webhooks?.basePath ?? '/sms/webhooks'
+
+    const webhookHandlers = webhooksEnabled
+      ? collectWebhookHandlers(pluginConfig.adapter)
+      : []
+
+    if (webhooksEnabled) {
+      assertUniquePaths(webhookHandlers)
+    }
+
+    if (webhookHandlers.length > 0) {
+      const newEndpoints: Endpoint[] = webhookHandlers.map(
+        ({ adapterName, handler }) => ({
+          path: `${basePath}/${resolvePath({ adapterName, handler })}`,
+          method: 'post' as const,
+          handler: async (req) => {
+            const handlerFn = makeWebhookEndpointHandler({
+              handler,
+              adapterName,
+              payload: req.payload,
+              pluginConfig,
+              logsSlug: logsEnabled ? logsSlug : undefined,
+              logsIncludeStatusHistory,
+            })
+            return handlerFn(req)
+          },
+        }),
+      )
+      config.endpoints = [...(config.endpoints ?? []), ...newEndpoints]
+    }
+
     const prevOnInit = config.onInit
     config.onInit = async (payload) => {
       if (prevOnInit) await prevOnInit(payload)
@@ -75,6 +123,25 @@ export const smsPlugin =
           'payload-plugin-sms: dashboard widget hard-codes the "sms-logs" slug; set widgets: false explicitly or use the default slug to silence this warning',
         )
       }
+
+      if (webhooksEnabled) {
+        if (webhookHandlers.length === 0) {
+          payload.logger.warn(
+            'payload-plugin-sms: webhooks.enabled is true but the configured adapter has no webhook handler — no webhook endpoints were registered',
+          )
+        }
+        if (!logsEnabled) {
+          payload.logger.warn(
+            'payload-plugin-sms: webhooks.enabled is true but collections.logs is disabled — status updates have nowhere to land',
+          )
+        }
+        if (pluginConfig.webhooks?.verifySignature === false) {
+          payload.logger.warn(
+            'payload-plugin-sms: webhook signature verification is DISABLED (verifySignature: false). Do not run this way in production.',
+          )
+        }
+      }
+
       payload.sendSMS = makeSendSMS({
         payload,
         pluginConfig,

@@ -22,6 +22,98 @@ const runOnInit = async (config: Config): Promise<Payload> => {
   return payload
 }
 
+describe('smsPlugin webhook registration', () => {
+  const adapterWithWebhook = () => mockAdapter({ defaultFrom: '+15550000000' })
+
+  test('registers webhook endpoints when webhooks.enabled and adapter has webhook', () => {
+    const result = smsPlugin({
+      adapter: adapterWithWebhook(),
+      collections: { logs: true },
+      webhooks: { enabled: true },
+    })(baseConfig())
+    const paths = (result.endpoints ?? []).map((e) => e.path)
+    expect(paths).toContain('/sms/webhooks/mock')
+  })
+
+  test('does not register endpoints when webhooks.enabled is false (default)', () => {
+    const result = smsPlugin({
+      adapter: adapterWithWebhook(),
+      collections: { logs: true },
+    })(baseConfig())
+    const paths = (result.endpoints ?? []).map((e) => e.path)
+    expect(paths.find((p) => p.startsWith('/sms/webhooks/'))).toBeUndefined()
+  })
+
+  test('honors basePath override', () => {
+    const result = smsPlugin({
+      adapter: adapterWithWebhook(),
+      collections: { logs: true },
+      webhooks: { enabled: true, basePath: '/notifications/sms' },
+    })(baseConfig())
+    const paths = (result.endpoints ?? []).map((e) => e.path)
+    expect(paths).toContain('/notifications/sms/mock')
+  })
+
+  test('warns at onInit when webhooks.enabled but adapter has no webhook', async () => {
+    const adapterNoWebhook = {
+      name: 'no-wh',
+      send: async () => {
+        throw new Error('unused')
+      },
+    }
+    const result = smsPlugin({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      adapter: adapterNoWebhook as any,
+      collections: { logs: true },
+      webhooks: { enabled: true },
+    })(baseConfig())
+    const payload = await runOnInit(result)
+    expect(payload.logger.warn).toHaveBeenCalled()
+  })
+
+  test('warns at onInit when webhooks.enabled but logs disabled', async () => {
+    const result = smsPlugin({
+      adapter: adapterWithWebhook(),
+      webhooks: { enabled: true },
+    })(baseConfig())
+    const payload = await runOnInit(result)
+    expect(payload.logger.warn).toHaveBeenCalled()
+  })
+
+  test('warns at onInit when verifySignature is false', async () => {
+    const result = smsPlugin({
+      adapter: adapterWithWebhook(),
+      collections: { logs: true },
+      webhooks: { enabled: true, verifySignature: false },
+    })(baseConfig())
+    const payload = await runOnInit(result)
+    expect(payload.logger.warn).toHaveBeenCalled()
+  })
+
+  test('throws at plugin-time on duplicate webhook path', () => {
+    const a = mockAdapter({ defaultFrom: '+1' })
+    const b = mockAdapter({ defaultFrom: '+1' })
+    const routed = {
+      name: 'router',
+      send: async () => {
+        throw new Error('unused')
+      },
+      webhooks: [
+        { adapterName: 'a', handler: a.webhook },
+        { adapterName: 'a', handler: b.webhook },
+      ],
+    }
+    expect(() =>
+      smsPlugin({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        adapter: routed as any,
+        collections: { logs: true },
+        webhooks: { enabled: true },
+      })(baseConfig()),
+    ).toThrow(/duplicate webhook path/i)
+  })
+})
+
 describe('smsPlugin', () => {
   test('adds sms-logs collection when collections.logs is true', () => {
     const result = smsPlugin({
