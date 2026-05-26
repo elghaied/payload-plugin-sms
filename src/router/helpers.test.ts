@@ -4,7 +4,7 @@ import { describe, expect, test, vi } from 'vitest'
 
 import { mockAdapter } from '../adapters/mock/index.js'
 import { SMSProviderError } from '../errors.js'
-import { byTenantLookup, byCountryPrefix, byRoundRobin } from './helpers.js'
+import { byTenantLookup, byCountryPrefix, byRoundRobin, byRandom } from './helpers.js'
 import type { RouteArgs } from './types.js'
 
 const stubPayload = (
@@ -152,5 +152,17 @@ describe('byRoundRobin', () => {
 
   test('throws at construction when providers is empty', () => {
     expect(() => byRoundRobin([])).toThrow()
+  })
+})
+
+describe('byRandom', () => {
+  test('returns one of the provided providers', async () => {
+    const route = byRandom(['a', 'b'])
+    const result = await route(argsWithTo('+15551234567'))
+    expect(['a', 'b']).toContain(result)
+  })
+
+  test('throws at construction when providers is empty', () => {
+    expect(() => byRandom([])).toThrow()
   })
 })

@@ -97,3 +97,10 @@ export const byRoundRobin = (providers: ProviderName[]): RouteFunction => {
     return name
   }
 }
+
+export const byRandom = (providers: ProviderName[]): RouteFunction => {
+  if (providers.length === 0) {
+    throw new Error('byRandom: providers list must be non-empty')
+  }
+  return async () => providers[Math.floor(Math.random() * providers.length)]
+}
