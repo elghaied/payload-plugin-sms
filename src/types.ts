@@ -1,4 +1,4 @@
-import type { PayloadRequest } from 'payload'
+import type { Payload, PayloadRequest } from 'payload'
 
 export type SMSStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'unknown'
 
@@ -7,6 +7,7 @@ export interface SMSMessage {
   from?: string
   body: string
   mediaUrls?: string[]
+  context?: Record<string, unknown>
 }
 
 /** Internal — passed to adapter.send after `from` is resolved by sendSMS. */
@@ -28,6 +29,7 @@ export interface SMSResult {
   body: string
   cost?: SMSCost
   raw: unknown
+  context?: Record<string, unknown>
   sentAt: Date
 }
 
@@ -35,11 +37,13 @@ export interface SMSAdapter {
   name: string
   defaultFrom?: string
   send: (message: OutboundSMSMessage) => Promise<SMSResult>
+  init?: (payload: Payload) => void | Promise<void>
 }
 
 export interface SMSLogsCollectionOptions {
   slug?: string
   admin?: Record<string, unknown>
+  includeContext?: boolean
 }
 
 export interface SMSPluginConfig {
