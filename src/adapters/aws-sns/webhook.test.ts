@@ -1,21 +1,53 @@
+import { execFileSync } from 'node:child_process'
 import { createPrivateKey, createSign } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 import type { PayloadRequest } from 'payload'
 
-import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { SMSWebhookVerificationError } from '../../errors.js'
 import { makeAwsSnsWebhook } from './webhook.js'
 
+// Generate a self-signed cert + matching private key at test setup time using
+// openssl. Writing them into the OS temp dir (not the repo) avoids committing
+// a PEM private key — credential scanners flag PEM keys even when they're
+// purely test data.
 let certPem: string
 let privateKey: ReturnType<typeof createPrivateKey>
+let tmpRoot: string
 
 beforeAll(() => {
-  const certUrl = new URL('./__fixtures__/aws-sns-cert.pem', import.meta.url)
-  const keyUrl = new URL('./__fixtures__/aws-sns-key.pem', import.meta.url)
-  certPem = readFileSync(certUrl, 'utf8')
-  privateKey = createPrivateKey(readFileSync(keyUrl, 'utf8'))
+  tmpRoot = mkdtempSync(join(tmpdir(), 'payload-sms-aws-sns-'))
+  const certPath = join(tmpRoot, 'cert.pem')
+  const keyPath = join(tmpRoot, 'key.pem')
+  execFileSync(
+    'openssl',
+    [
+      'req',
+      '-x509',
+      '-newkey',
+      'rsa:2048',
+      '-nodes',
+      '-days',
+      '1',
+      '-keyout',
+      keyPath,
+      '-out',
+      certPath,
+      '-subj',
+      '/CN=sns.us-east-1.amazonaws.com',
+    ],
+    { stdio: 'ignore' },
+  )
+  certPem = readFileSync(certPath, 'utf8')
+  privateKey = createPrivateKey(readFileSync(keyPath, 'utf8'))
+})
+
+afterAll(() => {
+  if (tmpRoot) rmSync(tmpRoot, { recursive: true, force: true })
 })
 
 const buildCanonicalNotification = (m: Record<string, string>): string => {
