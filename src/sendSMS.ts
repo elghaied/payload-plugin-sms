@@ -1,6 +1,11 @@
 import type { Payload } from 'payload'
 
-import type { OutboundSMSMessage, SMSMessage, SMSPluginConfig, SMSResult } from './types.js'
+import type {
+  OutboundSMSMessage,
+  SMSMessage,
+  SMSPluginConfig,
+  SMSResult,
+} from './types.js'
 
 import { SMSProviderError, SMSValidationError } from './errors.js'
 
@@ -10,10 +15,11 @@ export interface MakeSendSMSDeps {
   payload: Payload
   pluginConfig: SMSPluginConfig
   logsSlug?: string
+  logsIncludeContext?: boolean
 }
 
 export const makeSendSMS =
-  ({ payload, pluginConfig, logsSlug }: MakeSendSMSDeps) =>
+  ({ payload, pluginConfig, logsSlug, logsIncludeContext }: MakeSendSMSDeps) =>
   async (message: SMSMessage): Promise<SMSResult> => {
     if (!E164.test(message.to)) {
       throw new SMSValidationError(
@@ -49,11 +55,17 @@ export const makeSendSMS =
       throw error
     }
 
+    // Context propagation: fill in result.context from message.context if the
+    // adapter did not already set one.
+    if (result.context === undefined && message.context !== undefined) {
+      result = { ...result, context: message.context }
+    }
+
     if (logsSlug) {
       try {
         await payload.create({
           collection: logsSlug,
-          data: serializeResult(result),
+          data: serializeResult(result, Boolean(logsIncludeContext)),
         })
       } catch (err) {
         payload.logger.warn({ msg: 'payload-plugin-sms log write failed', err })
@@ -69,13 +81,22 @@ export const makeSendSMS =
     return result
   }
 
-const serializeResult = (result: SMSResult): Record<string, unknown> => ({
-  to: result.to,
-  from: result.from,
-  body: result.body,
-  provider: result.provider,
-  status: result.status,
-  providerMessageId: result.id,
-  cost: result.cost,
-  sentAt: result.sentAt,
-})
+const serializeResult = (
+  result: SMSResult,
+  includeContext: boolean,
+): Record<string, unknown> => {
+  const data: Record<string, unknown> = {
+    to: result.to,
+    from: result.from,
+    body: result.body,
+    provider: result.provider,
+    status: result.status,
+    providerMessageId: result.id,
+    cost: result.cost,
+    sentAt: result.sentAt,
+  }
+  if (includeContext && result.context !== undefined) {
+    data.context = result.context
+  }
+  return data
+}

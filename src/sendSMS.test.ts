@@ -130,4 +130,64 @@ describe('sendSMS', () => {
     expect(result.status).toBe('sent')
     expect(payload.logger.warn).toHaveBeenCalled()
   })
+
+  test('propagates message.context to result.context', async () => {
+    const adapter = mockAdapter({ defaultFrom: '+15550000000' })
+    const send = makeSendSMS({ payload, pluginConfig: { adapter } })
+    const result = await send({
+      to: '+15551234567',
+      body: 'hi',
+      context: { tenantId: 'acme' },
+    })
+    expect(result.context).toEqual({ tenantId: 'acme' })
+  })
+
+  test('does not overwrite context if adapter already set one', async () => {
+    const adapter = mockAdapter({ defaultFrom: '+15550000000' })
+    const originalSend = adapter.send
+    adapter.send = async (m) => {
+      const r = await originalSend(m)
+      return { ...r, context: { source: 'adapter' } }
+    }
+    const send = makeSendSMS({ payload, pluginConfig: { adapter } })
+    const result = await send({
+      to: '+15551234567',
+      body: 'hi',
+      context: { tenantId: 'acme' },
+    })
+    expect(result.context).toEqual({ source: 'adapter' })
+  })
+
+  test('writes context into log row when logsIncludeContext is true', async () => {
+    const adapter = mockAdapter({ defaultFrom: '+15550000000' })
+    const send = makeSendSMS({
+      payload,
+      pluginConfig: { adapter },
+      logsSlug: 'sms-logs',
+      logsIncludeContext: true,
+    })
+    await send({
+      to: '+15551234567',
+      body: 'hi',
+      context: { tenantId: 'acme' },
+    })
+    const call = (payload.create as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(call.data.context).toEqual({ tenantId: 'acme' })
+  })
+
+  test('does not write context into log row when logsIncludeContext is false', async () => {
+    const adapter = mockAdapter({ defaultFrom: '+15550000000' })
+    const send = makeSendSMS({
+      payload,
+      pluginConfig: { adapter },
+      logsSlug: 'sms-logs',
+    })
+    await send({
+      to: '+15551234567',
+      body: 'hi',
+      context: { tenantId: 'acme' },
+    })
+    const call = (payload.create as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(call.data.context).toBeUndefined()
+  })
 })

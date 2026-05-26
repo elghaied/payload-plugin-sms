@@ -50,6 +50,18 @@ const buildConfigWithMemoryDB = async () => {
           staticDir: path.resolve(dirname, 'media'),
         },
       },
+      {
+        slug: 'tenants',
+        fields: [
+          { name: 'name', type: 'text' },
+          {
+            name: 'smsProvider',
+            type: 'select',
+            options: ['twilio', 'telnyx'],
+            required: true,
+          },
+        ],
+      },
     ],
     db: mongooseAdapter({
       ensureIndexes: true,

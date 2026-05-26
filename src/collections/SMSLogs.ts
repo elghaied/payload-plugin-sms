@@ -8,6 +8,35 @@ export const buildSMSLogsCollection = (
   const options: SMSLogsCollectionOptions =
     typeof opts === 'object' && opts !== null ? opts : {}
 
+  const baseFields: CollectionConfig['fields'] = [
+    { name: 'to', type: 'text', required: true, index: true },
+    { name: 'from', type: 'text', required: true },
+    { name: 'body', type: 'textarea', required: true },
+    { name: 'provider', type: 'text', required: true, index: true },
+    {
+      name: 'status',
+      type: 'select',
+      required: true,
+      index: true,
+      options: ['queued', 'sent', 'delivered', 'failed', 'unknown'],
+    },
+    { name: 'providerMessageId', type: 'text', index: true },
+    {
+      name: 'cost',
+      type: 'group',
+      fields: [
+        { name: 'amount', type: 'text' },
+        { name: 'currency', type: 'text' },
+      ],
+    },
+    { name: 'error', type: 'textarea' },
+    { name: 'sentAt', type: 'date', required: true, index: true },
+  ]
+
+  if (options.includeContext) {
+    baseFields.push({ name: 'context', type: 'json' })
+  }
+
   return {
     slug: options.slug ?? 'sms-logs',
     admin: {
@@ -22,30 +51,7 @@ export const buildSMSLogsCollection = (
       update: () => false,
       delete: () => false,
     },
-    fields: [
-      { name: 'to', type: 'text', required: true, index: true },
-      { name: 'from', type: 'text', required: true },
-      { name: 'body', type: 'textarea', required: true },
-      { name: 'provider', type: 'text', required: true, index: true },
-      {
-        name: 'status',
-        type: 'select',
-        required: true,
-        index: true,
-        options: ['queued', 'sent', 'delivered', 'failed', 'unknown'],
-      },
-      { name: 'providerMessageId', type: 'text', index: true },
-      {
-        name: 'cost',
-        type: 'group',
-        fields: [
-          { name: 'amount', type: 'text' },
-          { name: 'currency', type: 'text' },
-        ],
-      },
-      { name: 'error', type: 'textarea' },
-      { name: 'sentAt', type: 'date', required: true, index: true },
-    ],
+    fields: baseFields,
     timestamps: true,
   }
 }

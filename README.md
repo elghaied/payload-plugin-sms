@@ -193,6 +193,65 @@ When `widgets: true` and logs are enabled, the plugin registers an `admin.dashbo
 
 Disable with `widgets: false`.
 
+## Router adapter (multi-provider)
+
+For multi-tenant SaaS or geo-routing, wrap multiple adapters in a `routerAdapter` and decide per-send which one handles the message.
+
+```ts
+import { smsPlugin } from 'payload-plugin-sms'
+import { twilioAdapter } from 'payload-plugin-sms/twilio'
+import { telnyxAdapter } from 'payload-plugin-sms/telnyx'
+import { routerAdapter, byTenantLookup } from 'payload-plugin-sms/router'
+
+smsPlugin({
+  adapter: routerAdapter({
+    providers: {
+      twilio: twilioAdapter({ accountSid, authToken }),
+      telnyx: telnyxAdapter({ apiKey }),
+    },
+    route: byTenantLookup({
+      collection: 'tenants',
+      providerField: 'smsProvider',
+      cacheMs: 60_000,
+    }),
+  }),
+  collections: { logs: { includeContext: true } },
+})
+```
+
+At the call site, attach the tenant id (and any per-tenant `from`):
+
+```ts
+await req.payload.sendSMS({
+  to: customer.phone,
+  from: tenant.smsFromNumber,
+  body: '...',
+  context: { tenantId: tenant.id },
+})
+```
+
+The router is just another `SMSAdapter`. Single-provider users (`smsPlugin({ adapter: twilioAdapter(...) })`) are unaffected.
+
+### Route helpers
+
+| Helper | Use |
+|---|---|
+| `byTenantLookup({ collection, providerField, contextKey?, cacheMs?, fallback? })` | SaaS: read tenant id from `message.context`, fetch the doc, return its provider field |
+| `byCountryPrefix({ '+1': 'twilio', '+33': 'telnyx' }, { fallback? })` | Geo route by E.164 prefix; longest-prefix wins |
+| `byRoundRobin(['twilio-a', 'twilio-b'])` | Cycle across duplicate accounts |
+| `byRandom(['twilio-a', 'twilio-b'])` | Uniform random pick |
+| `withFailover(inner, ['fallback-a', 'fallback-b'])` | Wrap any route; on `SMSProviderError`, try the next provider in order |
+
+You can also write a `route` callback directly — it's just `(args) => string \| string[]` (or async).
+
+### `context`
+
+`SMSMessage.context` is an opaque per-send map. It flows to the route function, the `onSend`/`onError` hooks (via `args.message`), and — when `collections.logs.includeContext: true` — into a `context` (JSON) field on the `sms-logs` collection.
+
+### Failover semantics
+
+A route returning a single provider name calls that provider once. Returning an array `['a', 'b']` tries each in order on `SMSProviderError`; if all fail the router throws a single `SMSProviderError` whose `.cause` is an array of the individual errors. `SMSValidationError` is never retried.
+
 ## Hooks (onSend, onError)
 
 ```ts
