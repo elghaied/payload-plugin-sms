@@ -4,6 +4,7 @@ import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { smsPlugin } from 'payload-plugin-sms'
+import { mockAdapter } from 'payload-plugin-sms/mock'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
@@ -16,6 +17,8 @@ const dirname = path.dirname(filename)
 if (!process.env.ROOT_DIR) {
   process.env.ROOT_DIR = dirname
 }
+
+export const devSMSAdapter = mockAdapter({ defaultFrom: '+15550000000' })
 
 const buildConfigWithMemoryDB = async () => {
   if (process.env.NODE_ENV === 'test') {
@@ -57,7 +60,13 @@ const buildConfigWithMemoryDB = async () => {
     onInit: async (payload) => {
       await seed(payload)
     },
-    plugins: [smsPlugin({})],
+    plugins: [
+      smsPlugin({
+        adapter: devSMSAdapter,
+        collections: { logs: true },
+        widgets: true,
+      }),
+    ],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
     sharp,
     typescript: {
