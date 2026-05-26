@@ -123,6 +123,11 @@ export const makeAwsSnsWebhook = (opts: AwsSnsWebhookOptions): SMSWebhookHandler
         if (!body.SubscribeURL) {
           throw new SMSWebhookVerificationError('aws-sns: missing SubscribeURL')
         }
+        if (!isAwsSnsCertHost(body.SubscribeURL, opts.region)) {
+          throw new SMSWebhookVerificationError(
+            `aws-sns: SubscribeURL must be hosted at sns.${opts.region}.amazonaws.com`,
+          )
+        }
         await doFetch(body.SubscribeURL)
       }
     },

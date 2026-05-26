@@ -148,6 +148,28 @@ describe('aws-sns webhook', () => {
     expect(fetchSpy).toHaveBeenCalledWith(message.SubscribeURL)
   })
 
+  test('SubscriptionConfirmation: rejects SubscribeURL pointing at non-AWS host (SSRF guard)', async () => {
+    const message = {
+      Type: 'SubscriptionConfirmation',
+      MessageId: 'm1',
+      Token: 'tok',
+      TopicArn: 't',
+      Message: 'You have to confirm',
+      // Attacker-controlled SubscribeURL even though SigningCertURL is legit.
+      SubscribeURL: 'http://169.254.169.254/latest/meta-data/',
+      Timestamp: new Date().toISOString(),
+      SignatureVersion: '1',
+      SigningCertURL: 'https://sns.us-east-1.amazonaws.com/cert.pem',
+    } as Record<string, string>
+    const canonical = buildCanonicalSubscription(message)
+    ;(message as Record<string, string>).Signature = signCanonical(canonical)
+    const body = JSON.stringify(message)
+    await expect(
+      webhook.verify(makeReq(body, 'SubscriptionConfirmation'), Buffer.from(body)),
+    ).rejects.toBeInstanceOf(SMSWebhookVerificationError)
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
   test('parse SUCCESS -> delivered', async () => {
     const inner = {
       notification: { messageId: 'sns-1' },

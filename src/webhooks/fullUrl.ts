@@ -13,8 +13,14 @@ export const reconstructFullUrl = (
     const host = headers.get('x-forwarded-host')
     if (proto) u.protocol = `${proto}:`
     if (host) {
-      u.hostname = host
-      u.port = ''
+      const colon = host.indexOf(':')
+      if (colon === -1) {
+        u.hostname = host
+        u.port = ''
+      } else {
+        u.hostname = host.slice(0, colon)
+        u.port = host.slice(colon + 1)
+      }
     }
   }
   return u.toString()

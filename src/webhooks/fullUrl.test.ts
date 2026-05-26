@@ -63,4 +63,17 @@ describe('reconstructFullUrl', () => {
       'https://app.example.com/api/sms/webhooks/plivo?nonce=abc',
     )
   })
+
+  test('parses port out of X-Forwarded-Host when present', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const req = makeReq(
+      'http://internal:3000/api/sms/webhooks/twilio',
+      'internal:3000',
+      'https',
+      'app.example.com:8443',
+    ) as any
+    expect(reconstructFullUrl(req, true)).toBe(
+      'https://app.example.com:8443/api/sms/webhooks/twilio',
+    )
+  })
 })
