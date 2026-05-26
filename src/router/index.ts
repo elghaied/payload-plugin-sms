@@ -61,3 +61,14 @@ export const routerAdapter = (opts: RouterAdapterOptions): SMSAdapter => {
     },
   }
 }
+
+export { byTenantLookup, byCountryPrefix, byRoundRobin, byRandom } from './helpers.js'
+export { withFailover } from './failover.js'
+export type {
+  ProviderName,
+  RouteArgs,
+  RouteFunction,
+  RouteResult,
+  RouterAdapterOptions,
+} from './types.js'
+export type { ByTenantLookupOptions, ByCountryPrefixOptions } from './helpers.js'

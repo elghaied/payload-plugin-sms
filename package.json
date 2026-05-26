@@ -36,6 +36,11 @@
       "types": "./src/exports/rsc.ts",
       "default": "./src/exports/rsc.ts"
     },
+    "./router": {
+      "import": "./src/router/index.ts",
+      "types": "./src/router/index.ts",
+      "default": "./src/router/index.ts"
+    },
     "./twilio": {
       "import": "./src/adapters/twilio/index.ts",
       "types": "./src/adapters/twilio/index.ts",
@@ -162,6 +167,11 @@
         "import": "./dist/exports/rsc.js",
         "types": "./dist/exports/rsc.d.ts",
         "default": "./dist/exports/rsc.js"
+      },
+      "./router": {
+        "import": "./dist/router/index.js",
+        "types": "./dist/router/index.d.ts",
+        "default": "./dist/router/index.js"
       },
       "./twilio": {
         "import": "./dist/adapters/twilio/index.js",
