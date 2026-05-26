@@ -43,7 +43,7 @@ describe('buildSMSLogsCollection', () => {
     const c = buildSMSLogsCollection(true)
     const fieldNames = c.fields.map((f) => 'name' in f ? f.name : '').sort()
     expect(fieldNames).toEqual(
-      ['body', 'cost', 'error', 'from', 'provider', 'providerMessageId', 'sentAt', 'status', 'to'].sort(),
+      ['body', 'cost', 'deliveredAt', 'error', 'errorCode', 'failedAt', 'from', 'provider', 'providerMessageId', 'sentAt', 'status', 'to'].sort(),
     )
   })
 
@@ -58,5 +58,34 @@ describe('buildSMSLogsCollection', () => {
     const field = c.fields.find((f) => 'name' in f && f.name === 'context')
     expect(field).toBeDefined()
     expect(field && 'type' in field && field.type).toBe('json')
+  })
+})
+
+describe('SMSLogs schema additions for webhooks', () => {
+  test('declares deliveredAt, failedAt, errorCode by default', () => {
+    const c = buildSMSLogsCollection(true)
+    const names = c.fields.map((f) => ('name' in f ? f.name : ''))
+    expect(names).toContain('deliveredAt')
+    expect(names).toContain('failedAt')
+    expect(names).toContain('errorCode')
+  })
+
+  test('does not add statusHistory by default', () => {
+    const c = buildSMSLogsCollection(true)
+    const names = c.fields.map((f) => ('name' in f ? f.name : ''))
+    expect(names).not.toContain('statusHistory')
+  })
+
+  test('adds statusHistory when opted in', () => {
+    const c = buildSMSLogsCollection({ statusHistory: true })
+    const names = c.fields.map((f) => ('name' in f ? f.name : ''))
+    expect(names).toContain('statusHistory')
+    const history = c.fields.find(
+      (f) => 'name' in f && f.name === 'statusHistory',
+    ) as { type: string; fields: Array<{ name: string }> }
+    expect(history.type).toBe('array')
+    expect(history.fields.map((f) => f.name).sort()).toEqual(
+      ['errorCode', 'occurredAt', 'status'].sort(),
+    )
   })
 })
