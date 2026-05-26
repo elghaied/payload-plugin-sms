@@ -92,8 +92,8 @@ export const byRoundRobin = (providers: ProviderName[]): RouteFunction => {
   }
   let counter = 0
   return async () => {
-    const name = providers[counter % providers.length]
-    counter += 1
+    const name = providers[counter]
+    counter = (counter + 1) % providers.length
     return name
   }
 }

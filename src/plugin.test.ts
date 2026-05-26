@@ -149,6 +149,15 @@ describe('smsPlugin', () => {
     expect(call.data.context).toEqual({ tenantId: 'acme' })
   })
 
+  test('propagates errors from adapter.init', async () => {
+    const adapter = mockAdapter({ defaultFrom: '+15550000000' })
+    ;(adapter as unknown as { init: () => Promise<void> }).init = async () => {
+      throw new Error('init failed')
+    }
+    const result = smsPlugin({ adapter })(baseConfig()) as Config
+    await expect(runOnInit(result)).rejects.toThrow(/init failed/)
+  })
+
   test('calls adapter.init with payload at onInit when defined', async () => {
     const init = vi.fn()
     const adapter = mockAdapter({ defaultFrom: '+15550000000' })

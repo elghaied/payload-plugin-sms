@@ -88,6 +88,26 @@ describe('routerAdapter', () => {
     expect(a.messages).toHaveLength(0)
   })
 
+  test('unknown provider mid-array aborts even after prior SMSProviderError', async () => {
+    const a = mockAdapter({ defaultFrom: '+15550000000', fail: true })
+    const b = mockAdapter({ defaultFrom: '+15550000000' })
+    const r = routerAdapter({
+      providers: { a, b },
+      // Route returns: try 'a' (fails), then 'bad-key' (config bug → abort)
+      route: () => ['a', 'bad-key', 'b'],
+    })
+    let caught: unknown
+    try {
+      await r.send({ to: '+15551234567', from: '+15550000000', body: 'hi' })
+    } catch (e) {
+      caught = e
+    }
+    expect(caught).toBeInstanceOf(SMSProviderError)
+    expect((caught as SMSProviderError).message).toContain('unknown provider "bad-key"')
+    // b should NOT have been tried — unknown key short-circuits the failover chain
+    expect(b.messages).toHaveLength(0)
+  })
+
   test('tries each provider in array on SMSProviderError, returns first success', async () => {
     const a = mockAdapter({ defaultFrom: '+15550000000', fail: true })
     const b = mockAdapter({ defaultFrom: '+15550000000' })
