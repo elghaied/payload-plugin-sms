@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+# Allow test-only self-signed cert/key fixtures
+!src/adapters/aws-sns/__fixtures__/*.pem
 
 # debug
 npm-debug.log*
