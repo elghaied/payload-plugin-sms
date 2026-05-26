@@ -1,24 +1,70 @@
 {
   "name": "payload-plugin-sms",
-  "version": "1.0.0",
-  "description": "A blank template to get started with Payload 3.0",
+  "version": "0.1.0",
+  "description": "Multi-provider SMS plugin for Payload CMS 3.x with Twilio, Telnyx, Plivo, Vonage, and AWS SNS adapters.",
   "license": "MIT",
   "type": "module",
+  "keywords": [
+    "payload",
+    "payload-plugin",
+    "payloadcms",
+    "sms",
+    "mms",
+    "twilio",
+    "telnyx",
+    "plivo",
+    "vonage",
+    "aws-sns",
+    "messaging"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elghaied/payload-plugin-sms.git"
+  },
+  "bugs": {
+    "url": "https://github.com/elghaied/payload-plugin-sms/issues"
+  },
+  "homepage": "https://github.com/elghaied/payload-plugin-sms#readme",
   "exports": {
     ".": {
       "import": "./src/index.ts",
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./client": {
-      "import": "./src/exports/client.ts",
-      "types": "./src/exports/client.ts",
-      "default": "./src/exports/client.ts"
-    },
     "./rsc": {
       "import": "./src/exports/rsc.ts",
       "types": "./src/exports/rsc.ts",
       "default": "./src/exports/rsc.ts"
+    },
+    "./twilio": {
+      "import": "./src/adapters/twilio/index.ts",
+      "types": "./src/adapters/twilio/index.ts",
+      "default": "./src/adapters/twilio/index.ts"
+    },
+    "./telnyx": {
+      "import": "./src/adapters/telnyx/index.ts",
+      "types": "./src/adapters/telnyx/index.ts",
+      "default": "./src/adapters/telnyx/index.ts"
+    },
+    "./plivo": {
+      "import": "./src/adapters/plivo/index.ts",
+      "types": "./src/adapters/plivo/index.ts",
+      "default": "./src/adapters/plivo/index.ts"
+    },
+    "./vonage": {
+      "import": "./src/adapters/vonage/index.ts",
+      "types": "./src/adapters/vonage/index.ts",
+      "default": "./src/adapters/vonage/index.ts"
+    },
+    "./aws-sns": {
+      "import": "./src/adapters/aws-sns/index.ts",
+      "types": "./src/adapters/aws-sns/index.ts",
+      "default": "./src/adapters/aws-sns/index.ts"
+    },
+    "./mock": {
+      "import": "./src/adapters/mock/index.ts",
+      "types": "./src/adapters/mock/index.ts",
+      "default": "./src/adapters/mock/index.ts"
     }
   },
   "main": "./src/index.ts",
@@ -42,9 +88,10 @@
     "lint:fix": "eslint ./src --fix",
     "test": "pnpm test:int && pnpm test:e2e",
     "test:e2e": "playwright test",
-    "test:int": "vitest"
+    "test:int": "vitest run"
   },
   "devDependencies": {
+    "@aws-sdk/client-sns": "^3.658.0",
     "@eslint/eslintrc": "^3.2.0",
     "@payloadcms/db-mongodb": "3.84.1",
     "@payloadcms/db-postgres": "3.84.1",
@@ -59,6 +106,7 @@
     "@types/node": "22.19.9",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "@vonage/server-sdk": "^3.20.0",
     "copyfiles": "2.4.1",
     "cross-env": "^7.0.3",
     "eslint": "^9.23.0",
@@ -68,6 +116,7 @@
     "next": "16.2.6",
     "open": "^10.1.0",
     "payload": "3.84.1",
+    "plivo": "^4.65.0",
     "prettier": "^3.4.2",
     "qs-esm": "8.0.1",
     "react": "19.2.6",
@@ -75,12 +124,30 @@
     "rimraf": "3.0.2",
     "sharp": "0.34.2",
     "sort-package-json": "^2.10.0",
+    "telnyx": "^6.68.0",
+    "twilio": "^5.3.0",
     "typescript": "5.7.3",
     "vite-tsconfig-paths": "6.0.5",
     "vitest": "4.0.18"
   },
   "peerDependencies": {
-    "payload": "^3.84.1"
+    "@aws-sdk/client-sns": "^3.0.0",
+    "@vonage/server-sdk": "^3.0.0",
+    "payload": "^3.0.0",
+    "plivo": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "telnyx": "^6.0.0",
+    "twilio": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@aws-sdk/client-sns": { "optional": true },
+    "@vonage/server-sdk": { "optional": true },
+    "plivo": { "optional": true },
+    "react": { "optional": true },
+    "react-dom": { "optional": true },
+    "telnyx": { "optional": true },
+    "twilio": { "optional": true }
   },
   "engines": {
     "node": "^18.20.2 || >=20.9.0",
@@ -93,15 +160,40 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       },
-      "./client": {
-        "import": "./dist/exports/client.js",
-        "types": "./dist/exports/client.d.ts",
-        "default": "./dist/exports/client.js"
-      },
       "./rsc": {
         "import": "./dist/exports/rsc.js",
         "types": "./dist/exports/rsc.d.ts",
         "default": "./dist/exports/rsc.js"
+      },
+      "./twilio": {
+        "import": "./dist/adapters/twilio/index.js",
+        "types": "./dist/adapters/twilio/index.d.ts",
+        "default": "./dist/adapters/twilio/index.js"
+      },
+      "./telnyx": {
+        "import": "./dist/adapters/telnyx/index.js",
+        "types": "./dist/adapters/telnyx/index.d.ts",
+        "default": "./dist/adapters/telnyx/index.js"
+      },
+      "./plivo": {
+        "import": "./dist/adapters/plivo/index.js",
+        "types": "./dist/adapters/plivo/index.d.ts",
+        "default": "./dist/adapters/plivo/index.js"
+      },
+      "./vonage": {
+        "import": "./dist/adapters/vonage/index.js",
+        "types": "./dist/adapters/vonage/index.d.ts",
+        "default": "./dist/adapters/vonage/index.js"
+      },
+      "./aws-sns": {
+        "import": "./dist/adapters/aws-sns/index.js",
+        "types": "./dist/adapters/aws-sns/index.d.ts",
+        "default": "./dist/adapters/aws-sns/index.js"
+      },
+      "./mock": {
+        "import": "./dist/adapters/mock/index.js",
+        "types": "./dist/adapters/mock/index.d.ts",
+        "default": "./dist/adapters/mock/index.js"
       }
     },
     "main": "./dist/index.js",
