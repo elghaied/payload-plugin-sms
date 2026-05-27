@@ -97,8 +97,9 @@ jobs:
         with:
           body_path: /tmp/release-body.md
 
+      # npm CLI 11.5+ exchanges the GitHub Actions OIDC token (granted by
+      # `id-token: write` above) for a short-lived publish token via npm
+      # Trusted Publishers — no NPM_TOKEN secret needed.
       - run: npm install -g npm@latest
       - name: Publish to npm
-        run: pnpm publish --no-git-checks --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
