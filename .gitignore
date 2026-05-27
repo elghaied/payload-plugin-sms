@@ -51,3 +51,6 @@ next-env.d.ts
 
 # Superpowers spec/plan docs — kept locally, not shared
 /docs/
+
+# Skill evaluation workspaces (test outputs, iteration artifacts)
+/skills/*-workspace/

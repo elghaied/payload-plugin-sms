@@ -1,0 +1,33 @@
+{
+  "skill_name": "payload-plugin-sms",
+  "evals": [
+    {
+      "id": 1,
+      "name": "consumer-wiring",
+      "prompt": "I just added @elghaied/payload-plugin-sms to my Payload CMS app and I want to send a 2FA code via SMS when a user logs in. I'm using Twilio. Show me what to add to payload.config.ts, what env vars to set, and how to wire it into my auth flow. I have a `users` collection with `auth: true` and a `phone` text field. Write the final files (payload.config.ts patch + the auth hook).",
+      "expected_output": "Working payload.config.ts snippet with smsPlugin + twilioAdapter wired correctly (E.164-safe, defaultFrom, env vars). A working users-collection hook (or auth strategy) that calls req.payload.sendSMS with E.164 number and clear body. Lists env vars TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM (or messagingServiceSid). Mentions that twilio SDK must be installed separately.",
+      "assertions": []
+    },
+    {
+      "id": 2,
+      "name": "adding-adapter",
+      "prompt": "I want to add a Sinch SMS adapter to this repo, following the pattern of the existing Twilio/Telnyx ones. Sinch authenticates with an API token (Bearer), requires a service-plan-id, and the API endpoint is POST https://us.sms.api.sinch.com/xms/v1/${servicePlanId}/batches. The JSON body is { from: '+15551110000', to: ['+15552220000'], body: 'hi' } and the response has an `id` field (string) and a `canceled` boolean. Skip webhooks for now — just `send`. Make all the necessary changes: package.json (peerDependencies, peerDependenciesMeta, exports, publishConfig.exports), src/adapters/sinch/index.ts, and src/adapters/sinch/index.test.ts.",
+      "expected_output": "src/adapters/sinch/index.ts exports `sinchAdapter(opts): SMSAdapter` with name='sinch', dynamic-import-and-throw for the SDK or fetch-based, wraps provider errors in SMSProviderError, returns SMSResult with id/provider/raw/sentAt/status. Tests file mocks the network/SDK, covers happy path + error path. package.json has both exports['./sinch'] and publishConfig.exports['./sinch'] pointing at src and dist respectively. peerDependencies entry if using an SDK, optional in peerDependenciesMeta.",
+      "assertions": []
+    },
+    {
+      "id": 3,
+      "name": "debugging",
+      "prompt": "I've got @elghaied/payload-plugin-sms wired up with Twilio. Sends work fine and I see rows in `sms-logs`, but the `status` is stuck at `queued` and never advances to `delivered`. In the Twilio console I can see the messages are definitely being delivered (Twilio shows status='delivered' on its side). My app runs behind Cloudflare on Fly.io. I have `webhooks: { enabled: true }` in my plugin config and Twilio's status-callback URL is set to https://my-app.com/api/sms/webhooks/twilio. What should I check, in order of likelihood?",
+      "expected_output": "A diagnostic checklist that prioritizes: (1) trustProxy not enabled (Twilio signature includes full URL; Cloudflare rewrites Host/Proto), causing signature verification failures, (2) check server logs for 'signature verification failed' warnings, (3) confirm callback URL exactly matches what's in Twilio console, (4) confirm sms-logs row has the same providerMessageId Twilio is sending. Should NOT recommend disabling signature verification as the fix. Should explain WHY trustProxy matters (URL is part of the HMAC).",
+      "assertions": []
+    },
+    {
+      "id": 4,
+      "name": "webhook-handler",
+      "prompt": "I'm adding webhook support to a new Sinch adapter in this repo (src/adapters/sinch/). Sinch signs webhooks with HMAC-SHA256: the signature is computed over `${timestamp}.${rawBody}` using a shared signing secret, base64-encoded. The signature header is `X-Sinch-Webhook-Signature-V1` and the timestamp header is `X-Sinch-Webhook-Timestamp` (unix seconds). Reject if drift > 5 minutes. The JSON body is { batch_id: '01H...', to: '+15552220000', code: 0, status: 'Delivered', delivered_at: '2026-05-27T...' } where code 0 = Delivered, 2 = Queued, 9 = Failed. Write src/adapters/sinch/webhook.ts with `makeSinchWebhook(opts): SMSWebhookHandler` exporting verify + parse, plus src/adapters/sinch/webhook.test.ts.",
+      "expected_output": "webhook.ts: uses node:crypto createHmac + timingSafeEqual against rawBody (NOT re-parsed JSON), throws SMSWebhookVerificationError on missing headers / drift / signature mismatch, parses to SMSStatusEvent[] with providerMessageId = batch_id (or recipient-scoped), status mapped via STATUS_MAP (0→delivered, 2→queued, 9→failed, anything else→unknown). webhook.test.ts: positive verify, missing header, wrong signature, stale timestamp, mapped statuses, empty body returns [].",
+      "assertions": []
+    }
+  ]
+}
