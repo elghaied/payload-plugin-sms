@@ -53,4 +53,4 @@ next-env.d.ts
 /docs/
 
 # Skill evaluation workspaces (test outputs, iteration artifacts)
-/skills/*-workspace/
+/.claude/skills/*-workspace/
