@@ -1,5 +1,9 @@
 # @elghaied/payload-plugin-sms
 
+[![npm version](https://img.shields.io/npm/v/@elghaied/payload-plugin-sms.svg)](https://www.npmjs.com/package/@elghaied/payload-plugin-sms)
+[![npm downloads](https://img.shields.io/npm/dm/@elghaied/payload-plugin-sms.svg)](https://www.npmjs.com/package/@elghaied/payload-plugin-sms)
+[![license](https://img.shields.io/npm/l/@elghaied/payload-plugin-sms.svg)](https://github.com/elghaied/payload-plugin-sms/blob/main/LICENSE)
+
 Multi-provider SMS plugin for [Payload CMS](https://payloadcms.com) 3.x. Send SMS through Twilio, Telnyx, Plivo, Vonage, or AWS SNS — and call `payload.sendSMS(...)` from anywhere.
 
 Architecture mirrors `@payloadcms/email-nodemailer`: a thin core defines an adapter interface, and each provider ships as a separate subpath export with the SDK declared as an optional peer dependency.
