@@ -1,8 +1,11 @@
 import type { Config, Endpoint, Plugin } from 'payload'
 
+import { deepMergeSimple } from 'payload/shared'
+
 import type { SMSLogsCollectionOptions, SMSPluginConfig } from './types.js'
 
 import { buildSMSLogsCollection } from './collections/SMSLogs.js'
+import { translations } from './translations/index.js'
 import { makeSendSMS } from './sendSMS.js'
 import { deriveStatusCallbackUrl } from './webhooks/statusCallback.js'
 import { makeWebhookEndpointHandler } from './webhooks/endpoint.js'
@@ -43,6 +46,14 @@ export const smsPlugin =
         payload.logger.warn('payload-plugin-sms: disabled')
       }
       return config
+    }
+
+    config.i18n = {
+      ...(config.i18n ?? {}),
+      translations: deepMergeSimple(
+        translations,
+        (config.i18n?.translations as Record<string, Record<string, unknown>>) ?? {},
+      ),
     }
 
     const logsEnabled = Boolean(pluginConfig.collections?.logs)

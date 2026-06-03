@@ -1,6 +1,6 @@
 import type { Config, Payload } from 'payload'
 
-import { describe, expect, test, vi } from 'vitest'
+import { describe, expect, it, test, vi } from 'vitest'
 
 import { mockAdapter } from './adapters/mock/index.js'
 import { smsPlugin } from './plugin.js'
@@ -258,5 +258,20 @@ describe('smsPlugin', () => {
     const payload = await runOnInit(result)
     expect(init).toHaveBeenCalledTimes(1)
     expect(init).toHaveBeenCalledWith(payload)
+  })
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  it('merges sms translations into config.i18n.translations (consumer wins)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out = smsPlugin({ adapter: undefined } as any)({
+      collections: [],
+      i18n: { translations: { fr: { sms: { fieldTo: 'CONSUMER' } } } },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any) as Config
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tr = out.i18n!.translations as any
+    expect(tr.en.sms.fieldTo).toBe('To')              // plugin default present
+    expect(tr.fr.sms.fieldTo).toBe('CONSUMER')        // consumer override preserved
+    expect(tr.fr.sms.fieldFrom).toBe('Expéditeur')    // plugin default kept for non-overridden key
   })
 })
