@@ -57,6 +57,9 @@ export const plivoAdapter = (opts: PlivoAdapterOptions): SMSAdapter => ({
       payload.type = 'mms'
       payload.media_urls = message.mediaUrls
     }
+    if (message.statusCallbackUrl) {
+      payload.url = message.statusCallbackUrl
+    }
 
     try {
       const response = await client.messages.create(payload)

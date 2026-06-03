@@ -92,4 +92,27 @@ describe('telnyxAdapter', () => {
       a.send({ body: 'x', from: '+15550000000', to: '+15551234567' }),
     ).rejects.toBeInstanceOf(SMSProviderError)
   })
+
+  test('attaches webhook_url when statusCallbackUrl is set', async () => {
+    messagesSend.mockResolvedValue({ data: { id: 'm', to: [{ status: 'queued' }] } })
+    const a = telnyxAdapter({ apiKey: 'k' })
+    await a.send({
+      body: 'hi',
+      from: '+15550000000',
+      statusCallbackUrl: 'https://x.com/api/sms/webhooks/telnyx',
+      to: '+15551234567',
+    })
+    expect(messagesSend).toHaveBeenCalledWith(
+      expect.objectContaining({ webhook_url: 'https://x.com/api/sms/webhooks/telnyx' }),
+    )
+  })
+
+  test('omits webhook_url when statusCallbackUrl is not set', async () => {
+    messagesSend.mockResolvedValue({ data: { id: 'm', to: [{ status: 'queued' }] } })
+    const a = telnyxAdapter({ apiKey: 'k' })
+    await a.send({ body: 'hi', from: '+15550000000', to: '+15551234567' })
+    expect(messagesSend).toHaveBeenCalledWith(
+      expect.not.objectContaining({ webhook_url: expect.anything() }),
+    )
+  })
 })

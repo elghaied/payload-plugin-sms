@@ -67,4 +67,27 @@ describe('plivoAdapter', () => {
       a.send({ body: 'x', from: '+15550000000', to: '+15551234567' }),
     ).rejects.toBeInstanceOf(SMSProviderError)
   })
+
+  test('attaches url when statusCallbackUrl is set', async () => {
+    messagesCreate.mockResolvedValue({ messageUuid: 'u' })
+    const a = plivoAdapter({ authId: 'a', authToken: 't' })
+    await a.send({
+      body: 'hi',
+      from: '+15550000000',
+      statusCallbackUrl: 'https://x.com/api/sms/webhooks/plivo',
+      to: '+15551234567',
+    })
+    expect(messagesCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ url: 'https://x.com/api/sms/webhooks/plivo' }),
+    )
+  })
+
+  test('omits url when statusCallbackUrl is not set', async () => {
+    messagesCreate.mockResolvedValue({ messageUuid: 'u' })
+    const a = plivoAdapter({ authId: 'a', authToken: 't' })
+    await a.send({ body: 'hi', from: '+15550000000', to: '+15551234567' })
+    expect(messagesCreate).toHaveBeenCalledWith(
+      expect.not.objectContaining({ url: expect.anything() }),
+    )
+  })
 })

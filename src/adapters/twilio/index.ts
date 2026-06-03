@@ -79,6 +79,9 @@ export const twilioAdapter = (opts: TwilioAdapterOptions): SMSAdapter => ({
     if (message.mediaUrls?.length) {
       payload.mediaUrl = message.mediaUrls
     }
+    if (message.statusCallbackUrl) {
+      payload.statusCallback = message.statusCallbackUrl
+    }
 
     try {
       const response = await client.messages.create(payload)
