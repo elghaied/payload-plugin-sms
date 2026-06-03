@@ -1,6 +1,17 @@
 import type { CollectionConfig } from 'payload'
 
+import type { PluginT } from '../translations/index.js'
 import type { SMSLogsCollectionOptions } from '../types.js'
+
+const L = (key: string) => ({ t }: { t: unknown }) => (t as PluginT)(`sms:${key}`)
+
+const STATUS_OPTIONS = [
+  { label: L('statusQueued'), value: 'queued' },
+  { label: L('statusSent'), value: 'sent' },
+  { label: L('statusDelivered'), value: 'delivered' },
+  { label: L('statusFailed'), value: 'failed' },
+  { label: L('statusUnknown'), value: 'unknown' },
+]
 
 export const buildSMSLogsCollection = (
   opts: boolean | SMSLogsCollectionOptions | undefined,
@@ -9,49 +20,53 @@ export const buildSMSLogsCollection = (
     typeof opts === 'object' && opts !== null ? opts : {}
 
   const baseFields: CollectionConfig['fields'] = [
-    { name: 'to', type: 'text', index: true, required: true },
-    { name: 'from', type: 'text', required: true },
-    { name: 'body', type: 'textarea', required: true },
-    { name: 'provider', type: 'text', index: true, required: true },
+    { name: 'to', type: 'text', index: true, label: L('fieldTo'), required: true },
+    { name: 'from', type: 'text', label: L('fieldFrom'), required: true },
+    { name: 'body', type: 'textarea', label: L('fieldBody'), required: true },
+    { name: 'provider', type: 'text', index: true, label: L('fieldProvider'), required: true },
     {
       name: 'status',
       type: 'select',
       index: true,
-      options: ['queued', 'sent', 'delivered', 'failed', 'unknown'],
+      label: L('fieldStatus'),
+      options: STATUS_OPTIONS,
       required: true,
     },
-    { name: 'providerMessageId', type: 'text', index: true },
+    { name: 'providerMessageId', type: 'text', index: true, label: L('fieldProviderMessageId') },
     {
       name: 'cost',
       type: 'group',
+      label: L('fieldCost'),
       fields: [
-        { name: 'amount', type: 'text' },
-        { name: 'currency', type: 'text' },
+        { name: 'amount', type: 'text', label: L('fieldAmount') },
+        { name: 'currency', type: 'text', label: L('fieldCurrency') },
       ],
     },
-    { name: 'error', type: 'textarea' },
-    { name: 'errorCode', type: 'text' },
-    { name: 'sentAt', type: 'date', index: true, required: true },
-    { name: 'deliveredAt', type: 'date', index: true },
-    { name: 'failedAt', type: 'date', index: true },
+    { name: 'error', type: 'textarea', label: L('fieldError') },
+    { name: 'errorCode', type: 'text', label: L('fieldErrorCode') },
+    { name: 'sentAt', type: 'date', index: true, label: L('fieldSentAt'), required: true },
+    { name: 'deliveredAt', type: 'date', index: true, label: L('fieldDeliveredAt') },
+    { name: 'failedAt', type: 'date', index: true, label: L('fieldFailedAt') },
   ]
 
   if (options.includeContext) {
-    baseFields.push({ name: 'context', type: 'json' })
+    baseFields.push({ name: 'context', type: 'json', label: L('fieldContext') })
   }
 
   if (options.statusHistory) {
     baseFields.push({
       name: 'statusHistory',
       type: 'array',
+      label: L('fieldStatusHistory'),
       fields: [
         {
           name: 'status',
           type: 'select',
-          options: ['queued', 'sent', 'delivered', 'failed', 'unknown'],
+          label: L('fieldStatus'),
+          options: STATUS_OPTIONS,
         },
-        { name: 'occurredAt', type: 'date' },
-        { name: 'errorCode', type: 'text' },
+        { name: 'occurredAt', type: 'date', label: L('fieldOccurredAt') },
+        { name: 'errorCode', type: 'text', label: L('fieldErrorCode') },
       ],
     })
   }
@@ -71,6 +86,10 @@ export const buildSMSLogsCollection = (
       ...(options.admin ?? {}),
     },
     fields: baseFields,
+    labels: {
+      plural: ({ t }) => (t as PluginT)('sms:collectionLabelPlural'),
+      singular: ({ t }) => (t as PluginT)('sms:collectionLabelSingular'),
+    },
     timestamps: true,
   }
 }
