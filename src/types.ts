@@ -13,6 +13,8 @@ export interface SMSMessage {
 /** Internal — passed to adapter.send after `from` is resolved by sendSMS. */
 export interface OutboundSMSMessage extends Omit<SMSMessage, 'from'> {
   from: string
+  /** Resolved per-message delivery-status callback URL (set by the plugin when webhooks are enabled). */
+  statusCallbackUrl?: string
 }
 
 export interface SMSCost {
@@ -76,6 +78,8 @@ export interface SMSLogsCollectionOptions {
 export interface SMSWebhooksConfig {
   basePath?: string
   enabled: boolean
+  /** Override the auto-derived delivery-status callback URL (else derived from config.serverURL + basePath). */
+  statusCallbackUrl?: string
   trustProxy?: boolean
   verifySignature?: boolean
 }
