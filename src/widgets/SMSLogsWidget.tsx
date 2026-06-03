@@ -1,12 +1,12 @@
-import { getPayload } from 'payload'
+import type { WidgetServerProps } from 'payload'
 
-// `@payload-config` is the consumer Next.js app's path alias — resolved at
-// runtime in their project, not ours. The stub declaration in
-// payload-config-stub.d.ts satisfies the type-checker locally.
-import configPromise from '@payload-config'
+import type { PluginT } from '../translations/index.js'
 
-export const SMSLogsWidget = async () => {
-  const payload = await getPayload({ config: configPromise })
+export const SMSLogsWidget = async (props: WidgetServerProps) => {
+  const { req } = props
+  const { i18n, payload } = req
+  const t = i18n.t as PluginT
+
   if (!payload.collections['sms-logs']) {
     return null
   }
@@ -34,10 +34,10 @@ export const SMSLogsWidget = async () => {
       }}
     >
       <header style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
-        SMS — last 24h: {totalDocs}
+        {t('sms:widgetLast24h')} {totalDocs}
       </header>
       {recent.docs.length === 0 ? (
-        <p style={{ color: 'var(--theme-elevation-500)' }}>No messages yet.</p>
+        <p style={{ color: 'var(--theme-elevation-500)' }}>{t('sms:widgetEmpty')}</p>
       ) : (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
           {recent.docs.map((d) => {
@@ -57,7 +57,7 @@ export const SMSLogsWidget = async () => {
         </ul>
       )}
       <a href="/admin/collections/sms-logs" style={{ display: 'inline-block', marginTop: '0.5rem' }}>
-        View all →
+        {t('sms:widgetViewAll')}
       </a>
     </section>
   )
