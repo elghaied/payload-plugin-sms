@@ -1,6 +1,11 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 
+import { en } from '../translations/en.js'
+import { fr } from '../translations/fr.js'
 import { buildSMSLogsCollection } from './SMSLogs.js'
+
+const fakeT = (table: Record<string, string>) => (key: string) =>
+  table[key.replace(/^sms:/, '')] ?? key
 
 describe('buildSMSLogsCollection', () => {
   test('uses default slug "sms-logs"', () => {
@@ -87,5 +92,19 @@ describe('SMSLogs schema additions for webhooks', () => {
     expect(history.fields.map((f) => f.name).sort()).toEqual(
       ['errorCode', 'occurredAt', 'status'].sort(),
     )
+  })
+})
+
+describe('SMSLogs i18n labels', () => {
+  it('field + option + collection labels resolve via the sms namespace', () => {
+    const col = buildSMSLogsCollection({ statusHistory: true })
+    const fields = col.fields as any[]
+    const toField = fields.find((f) => f.name === 'to')
+    expect((toField.label as any)({ t: fakeT(en) })).toBe('To')
+    expect((toField.label as any)({ t: fakeT(fr) })).toBe('Destinataire')
+    const statusField = fields.find((f) => f.name === 'status')
+    const delivered = statusField.options.find((o: any) => o.value === 'delivered')
+    expect((delivered.label as any)({ t: fakeT(fr) })).toBe('Livré')
+    expect(((col.labels as any).plural)({ t: fakeT(fr) })).toBe('Journaux SMS')
   })
 })

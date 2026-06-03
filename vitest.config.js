@@ -20,7 +20,7 @@ export default defineConfig(() => {
       environment: 'node',
       hookTimeout: 30_000,
       testTimeout: 30_000,
-      exclude: ['**/node_modules/**', '**/dist/**'],
+      exclude: ['**/node_modules/**', '**/dist/**', '**/.claude/**'],
     },
   }
 })

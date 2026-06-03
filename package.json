@@ -1,6 +1,6 @@
 {
   "name": "@elghaied/payload-plugin-sms",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Multi-provider SMS plugin for Payload CMS 3.x with Twilio, Telnyx, Plivo, Vonage, and AWS SNS adapters.",
   "license": "MIT",
   "type": "module",
@@ -40,6 +40,11 @@
       "import": "./src/router/index.ts",
       "types": "./src/router/index.ts",
       "default": "./src/router/index.ts"
+    },
+    "./translations": {
+      "import": "./src/translations/index.ts",
+      "types": "./src/translations/index.ts",
+      "default": "./src/translations/index.ts"
     },
     "./twilio": {
       "import": "./src/adapters/twilio/index.ts",
@@ -173,6 +178,11 @@
         "import": "./dist/router/index.js",
         "types": "./dist/router/index.d.ts",
         "default": "./dist/router/index.js"
+      },
+      "./translations": {
+        "import": "./dist/translations/index.js",
+        "types": "./dist/translations/index.d.ts",
+        "default": "./dist/translations/index.js"
       },
       "./twilio": {
         "import": "./dist/adapters/twilio/index.js",

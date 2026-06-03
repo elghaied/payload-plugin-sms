@@ -105,4 +105,27 @@ describe('twilioAdapter', () => {
       a.send({ body: 'x', from: '+15550000000', to: '+15551234567' }),
     ).rejects.toBeInstanceOf(SMSProviderError)
   })
+
+  test('attaches statusCallback when statusCallbackUrl is set', async () => {
+    messagesCreate.mockResolvedValue({ sid: 'SM1', status: 'queued' })
+    const a = twilioAdapter({ accountSid: 'AC', authToken: 't' })
+    await a.send({
+      body: 'hi',
+      from: '+15550000000',
+      statusCallbackUrl: 'https://x.com/api/sms/webhooks/twilio',
+      to: '+15551234567',
+    })
+    expect(messagesCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCallback: 'https://x.com/api/sms/webhooks/twilio' }),
+    )
+  })
+
+  test('omits statusCallback when statusCallbackUrl is not set', async () => {
+    messagesCreate.mockResolvedValue({ sid: 'SM1', status: 'queued' })
+    const a = twilioAdapter({ accountSid: 'AC', authToken: 't' })
+    await a.send({ body: 'hi', from: '+15550000000', to: '+15551234567' })
+    expect(messagesCreate).toHaveBeenCalledWith(
+      expect.not.objectContaining({ statusCallback: expect.anything() }),
+    )
+  })
 })

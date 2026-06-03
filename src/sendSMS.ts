@@ -16,10 +16,11 @@ export interface MakeSendSMSDeps {
   logsSlug?: string
   payload: Payload
   pluginConfig: SMSPluginConfig
+  statusCallbackUrl?: string
 }
 
 export const makeSendSMS =
-  ({ logsIncludeContext, logsSlug, payload, pluginConfig }: MakeSendSMSDeps) =>
+  ({ logsIncludeContext, logsSlug, payload, pluginConfig, statusCallbackUrl }: MakeSendSMSDeps) =>
   async (message: SMSMessage): Promise<SMSResult> => {
     if (!E164.test(message.to)) {
       throw new SMSValidationError(
@@ -39,7 +40,11 @@ export const makeSendSMS =
       )
     }
 
-    const outbound: OutboundSMSMessage = { ...message, from }
+    const outbound: OutboundSMSMessage = {
+      ...message,
+      from,
+      ...(statusCallbackUrl ? { statusCallbackUrl } : {}),
+    }
 
     let result: SMSResult
     try {

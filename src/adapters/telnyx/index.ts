@@ -78,6 +78,9 @@ export const telnyxAdapter = (opts: TelnyxAdapterOptions): SMSAdapter => ({
     if (opts.messagingProfileId) {
       payload.messaging_profile_id = opts.messagingProfileId
     }
+    if (message.statusCallbackUrl) {
+      payload.webhook_url = message.statusCallbackUrl
+    }
 
     try {
       const response = await client.messages.send(payload)

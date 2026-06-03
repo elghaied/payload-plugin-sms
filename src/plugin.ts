@@ -1,9 +1,13 @@
 import type { Config, Endpoint, Plugin } from 'payload'
 
+import { deepMergeSimple } from 'payload/shared'
+
 import type { SMSLogsCollectionOptions, SMSPluginConfig } from './types.js'
 
 import { buildSMSLogsCollection } from './collections/SMSLogs.js'
+import { translations } from './translations/index.js'
 import { makeSendSMS } from './sendSMS.js'
+import { deriveStatusCallbackUrl } from './webhooks/statusCallback.js'
 import { makeWebhookEndpointHandler } from './webhooks/endpoint.js'
 import {
   assertUniquePaths,
@@ -42,6 +46,14 @@ export const smsPlugin =
         payload.logger.warn('payload-plugin-sms: disabled')
       }
       return config
+    }
+
+    config.i18n = {
+      ...(config.i18n ?? {}),
+      translations: deepMergeSimple(
+        translations,
+        (config.i18n?.translations as Record<string, Record<string, unknown>>) ?? {},
+      ),
     }
 
     const logsEnabled = Boolean(pluginConfig.collections?.logs)
@@ -86,6 +98,18 @@ export const smsPlugin =
     if (webhooksEnabled) {
       assertUniquePaths(webhookHandlers)
     }
+
+    const derivedStatusCallbackUrl =
+      webhooksEnabled && webhookHandlers.length === 1
+        ? deriveStatusCallbackUrl({
+            basePath,
+            serverURL: config.serverURL,
+            webhookPath: resolvePath(webhookHandlers[0]),
+          })
+        : undefined
+    const statusCallbackUrl = webhooksEnabled
+      ? (pluginConfig.webhooks?.statusCallbackUrl ?? derivedStatusCallbackUrl)
+      : undefined
 
     if (webhookHandlers.length > 0) {
       const newEndpoints: Endpoint[] = webhookHandlers.map(
@@ -147,6 +171,7 @@ export const smsPlugin =
         logsSlug: logsEnabled ? logsSlug : undefined,
         payload,
         pluginConfig,
+        statusCallbackUrl,
       })
     }
 
