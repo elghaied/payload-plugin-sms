@@ -2,11 +2,11 @@
 
 All notable changes to `@elghaied/payload-plugin-sms` are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
-## [0.4.1] — 2026-06-03
+## [0.4.2] — 2026-06-03
 
 ### Fixed
 
-- **Broken published entrypoints in 0.4.0.** npm ≥ 11 no longer applies `publishConfig` field overrides (it warns `Unknown publishConfig config "exports"` and ignores them), so 0.4.0 shipped with `main`/`exports` still pointing at `./src/*.ts` — which isn't in the published tarball, breaking every import. The src→dist swap is now done explicitly by `prepack`/`postpack` scripts, independent of the npm version. (Functionally identical to the intended 0.4.0; 0.4.0 is deprecated.)
+- **Broken published entrypoints in 0.4.0 and 0.4.1.** The release workflow published with `npm publish`, but this package relies on **`publishConfig` field-replacement** (src-pointing `main`/`exports` in the working tree, dist-pointing in `publishConfig`). npm's `publishConfig` only overrides `.npmrc` settings — **not** package.json fields like `exports`/`main` — whereas `pnpm publish` does. So 0.4.0/0.4.1 shipped with `main`/`exports` pointing at `./src/*.ts`, which isn't in the `dist`-only tarball → every import failed. Fixed by publishing with `pnpm publish` (matching the sibling `payload-reserve` plugin). 0.4.0 and 0.4.1 are deprecated; 0.4.2 is functionally identical to the intended 0.4.0.
 
 ## [0.4.0] — 2026-06-03
 

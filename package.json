@@ -1,6 +1,6 @@
 {
   "name": "@elghaied/payload-plugin-sms",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Multi-provider SMS plugin for Payload CMS 3.x with Twilio, Telnyx, Plivo, Vonage, and AWS SNS adapters.",
   "license": "MIT",
   "type": "module",
@@ -96,8 +96,6 @@
     "generate:types": "pnpm dev:generate-types",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "postpack": "node scripts/postpack.mjs",
-    "prepack": "node scripts/prepack.mjs",
     "test": "pnpm test:int",
     "test:int": "vitest run"
   },

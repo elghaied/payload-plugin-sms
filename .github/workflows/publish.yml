@@ -102,4 +102,4 @@ jobs:
       # Trusted Publishers — no NPM_TOKEN secret needed.
       - run: npm install -g npm@latest
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: pnpm publish --no-git-checks --provenance --access public
