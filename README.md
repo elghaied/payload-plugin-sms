@@ -160,10 +160,12 @@ adapter.reset()   // clears it
 | `adapter`           | `SMSAdapter`                                               | —             | Required at runtime. Missing adapter → `sendSMS` throws.  |
 | `defaultFrom`       | `string`                                                   | —             | Falls back to adapter's `defaultFrom`.                    |
 | `disabled`          | `boolean`                                                  | `false`       | Skips registration; logs a warning.                       |
-| `collections.logs`  | `boolean \| { slug?: string; admin?: Record<...> }`        | `false`       | Creates an `sms-logs` collection.                         |
+| `collections.logs`  | `boolean \| { slug?; admin?; includeContext?; statusHistory? }` | `false`  | Creates an `sms-logs` collection. `includeContext` adds a JSON `context` field; `statusHistory` adds an append-only status-event array. |
 | `widgets`           | `boolean`                                                  | `true`        | Registers the dashboard widget when logs enabled.         |
+| `webhooks`          | `{ enabled; basePath?; statusCallbackUrl?; trustProxy?; verifySignature? }` | — | Enables the delivery-status receiver + auto-derived callback. See [Delivery-status webhooks](#delivery-status-webhooks). |
 | `onSend`            | `(args) => void \| Promise<void>`                          | —             | Called after every successful send.                       |
 | `onError`           | `(args) => void \| Promise<void>`                          | —             | Called when send fails. Original error is re-thrown.      |
+| `onStatus`          | `(args) => void \| Promise<void>`                          | —             | Called on every delivery-status webhook event (requires `webhooks.enabled`). |
 
 ## Logs collection
 
@@ -179,7 +181,14 @@ Enable with `collections: { logs: true }`. Schema:
 | `providerMessageId` | text     | Provider's message id                          |
 | `cost`              | group    | `{ amount, currency }` when reported           |
 | `error`             | textarea | Adapter error message (if any)                 |
+| `errorCode`         | text     | Provider error code (from a failed-status webhook) |
 | `sentAt`            | date     | Server timestamp                               |
+| `deliveredAt`       | date     | Set when a webhook reports `delivered`         |
+| `failedAt`          | date     | Set when a webhook reports `failed`            |
+| `context`           | json     | Per-send metadata — only with `includeContext: true` |
+| `statusHistory`     | array    | Append-only `{ status, occurredAt, errorCode }` — only with `statusHistory: true` |
+
+`deliveredAt` / `failedAt` / `errorCode` / `statusHistory` are populated by [delivery-status webhooks](#delivery-status-webhooks).
 
 Read access requires a logged-in admin user. Create/update/delete from the admin panel are blocked — the plugin is the only writer.
 
