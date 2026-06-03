@@ -191,4 +191,57 @@ describe('sendSMS', () => {
     const call = (payload.create as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]
     expect(call.data.context).toBeUndefined()
   })
+
+  test('passes statusCallbackUrl onto the outbound message when set', async () => {
+    let captured: any
+    const adapter = {
+      name: 'cap',
+      send: async (m: any) => {
+        captured = m
+        return {
+          id: '1',
+          body: m.body,
+          from: m.from,
+          provider: 'cap',
+          raw: {},
+          sentAt: new Date(),
+          status: 'queued' as const,
+          to: m.to,
+        }
+      },
+    }
+    const send = makeSendSMS({
+      payload,
+      pluginConfig: { adapter, defaultFrom: '+15550000000' } as any,
+      statusCallbackUrl: 'https://x.com/api/sms/webhooks/twilio',
+    })
+    await send({ body: 'hi', to: '+15551234567' })
+    expect(captured.statusCallbackUrl).toBe('https://x.com/api/sms/webhooks/twilio')
+  })
+
+  test('omits statusCallbackUrl on the outbound when not set', async () => {
+    let captured: any
+    const adapter = {
+      name: 'cap',
+      send: async (m: any) => {
+        captured = m
+        return {
+          id: '1',
+          body: m.body,
+          from: m.from,
+          provider: 'cap',
+          raw: {},
+          sentAt: new Date(),
+          status: 'queued' as const,
+          to: m.to,
+        }
+      },
+    }
+    const send = makeSendSMS({
+      payload,
+      pluginConfig: { adapter, defaultFrom: '+15550000000' } as any,
+    })
+    await send({ body: 'hi', to: '+15551234567' })
+    expect('statusCallbackUrl' in captured).toBe(false)
+  })
 })

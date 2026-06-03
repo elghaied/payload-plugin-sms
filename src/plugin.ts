@@ -4,6 +4,7 @@ import type { SMSLogsCollectionOptions, SMSPluginConfig } from './types.js'
 
 import { buildSMSLogsCollection } from './collections/SMSLogs.js'
 import { makeSendSMS } from './sendSMS.js'
+import { deriveStatusCallbackUrl } from './webhooks/statusCallback.js'
 import { makeWebhookEndpointHandler } from './webhooks/endpoint.js'
 import {
   assertUniquePaths,
@@ -87,6 +88,18 @@ export const smsPlugin =
       assertUniquePaths(webhookHandlers)
     }
 
+    const derivedStatusCallbackUrl =
+      webhooksEnabled && webhookHandlers.length === 1
+        ? deriveStatusCallbackUrl({
+            basePath,
+            serverURL: config.serverURL,
+            webhookPath: resolvePath(webhookHandlers[0]),
+          })
+        : undefined
+    const statusCallbackUrl = webhooksEnabled
+      ? (pluginConfig.webhooks?.statusCallbackUrl ?? derivedStatusCallbackUrl)
+      : undefined
+
     if (webhookHandlers.length > 0) {
       const newEndpoints: Endpoint[] = webhookHandlers.map(
         ({ adapterName, handler }) => ({
@@ -147,6 +160,7 @@ export const smsPlugin =
         logsSlug: logsEnabled ? logsSlug : undefined,
         payload,
         pluginConfig,
+        statusCallbackUrl,
       })
     }
 
