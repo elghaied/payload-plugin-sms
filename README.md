@@ -290,7 +290,7 @@ try {
 
 ## Delivery-status webhooks
 
-Enable provider webhooks to keep `sms-logs` rows in sync with real delivery state.
+Enable provider webhooks to keep `sms-logs` rows in sync with real delivery state. With `webhooks: { enabled: true }`, the Twilio/Telnyx/Plivo adapters are also handed a per-message delivery-status callback URL automatically — derived from `config.serverURL` + the webhook base path (e.g. `https://app.com/api/sms/webhooks/twilio`). No Messaging-Service or provider-portal step is required for a plain sender. (Vonage and AWS SNS have no per-message callback and are unaffected.)
 
 ```ts
 import { smsPlugin } from '@elghaied/payload-plugin-sms'
@@ -328,11 +328,33 @@ Webhook URLs (Payload prepends `/api`):
 
 Notes:
 
+- The auto-derived callback URL is skipped when `serverURL` is missing or points at `localhost`/`127.0.0.1` (dev). Override it with `webhooks.statusCallbackUrl` (applies to Twilio/Telnyx/Plivo).
+- The callback URL handed to the provider **must match** the URL the receiver reconstructs for signature verification. Behind a reverse proxy, set the adapter's `webhook: { trustProxy: true }` so the host/protocol are read from forwarded headers — or use the `webhooks.statusCallbackUrl` override to pin both ends explicitly.
 - Signature verification is **on by default**. Set `webhooks.verifySignature: false` only for local testing.
 - Status updates are gated by rank (`queued → sent → delivered`, with `failed` terminal), so out-of-order or duplicate webhooks are dropped silently.
 - Set `collections.logs.statusHistory: true` to keep an append-only history of every event.
 - Vonage plain MD5 signing is **not supported** (insecure). Use `sha256hash` or `sha512hash`.
 - Twilio and Plivo do not sign timestamps — those providers cannot prevent replay attacks at the signature layer.
+
+## Internationalization
+
+The `sms-logs` collection (labels, field labels, status options) and the dashboard widget ship with bundled `en` and `fr` translations, deep-merged into `config.i18n.translations` under an `sms` namespace. Your existing translations always win on conflict.
+
+Override any string — or add a language — via `i18n.translations.{lang}.sms`:
+
+```ts
+buildConfig({
+  i18n: {
+    translations: {
+      fr: { sms: { fieldTo: 'Destinataire' } },
+      // add a new language by supplying its sms.* keys
+    },
+  },
+  // ...
+})
+```
+
+The raw translation tables are also available directly via the `@elghaied/payload-plugin-sms/translations` export.
 
 ## Roadmap
 

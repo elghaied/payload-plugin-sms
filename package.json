@@ -1,6 +1,6 @@
 {
   "name": "@elghaied/payload-plugin-sms",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Multi-provider SMS plugin for Payload CMS 3.x with Twilio, Telnyx, Plivo, Vonage, and AWS SNS adapters.",
   "license": "MIT",
   "type": "module",

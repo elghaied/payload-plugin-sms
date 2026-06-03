@@ -2,6 +2,13 @@
 
 All notable changes to `@elghaied/payload-plugin-sms` are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.0] — 2026-06-03
+
+### Added
+
+- **Delivery-status callbacks now auto-wired.** When `webhooks: { enabled: true }`, the Twilio/Telnyx/Plivo adapters now receive a per-message delivery-status callback URL automatically — derived from `config.serverURL` + the webhook base path (e.g. `https://app.com/api/sms/webhooks/twilio`). No Messaging-Service / portal step needed for a plain sender. Override with `webhooks.statusCallbackUrl`. Localhost `serverURL` is skipped (dev). Vonage/AWS-SNS unchanged (no per-message callback). Note: the derived/override URL must match the URL the receiver reconstructs for signature verification — set `webhook.trustProxy: true` behind a reverse proxy, or use the override.
+- **i18n (en/fr).** The `sms-logs` collection labels, field labels, status options, and the dashboard widget are now translated via a new `sms` translation namespace, deep-merged into `config.i18n.translations` (your translations win). Override any string or add languages via `i18n.translations.{lang}.sms.{key}`. New `@elghaied/payload-plugin-sms/translations` export.
+
 ## [0.3.0] — 2026-05-26
 
 ### Added
