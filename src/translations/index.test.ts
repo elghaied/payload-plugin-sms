@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { translations } from './index.js'
+
 import { en } from './en.js'
 import { fr } from './fr.js'
+import { translations } from './index.js'
 
 describe('sms translations', () => {
   it('registers en + fr under the `sms` namespace', () => {

@@ -24,7 +24,7 @@ export const defaultESLintIgnores = [
 
 export default [
   {
-    ignores: ['dev/.next/**', '**/dist/**', '**/node_modules/**'],
+    ignores: ['dev/.next/**', '**/dist/**', '**/node_modules/**', '**/.claude/**'],
   },
   ...payloadEsLintConfig,
   {

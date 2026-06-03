@@ -36,11 +36,11 @@ export const buildSMSLogsCollection = (
     {
       name: 'cost',
       type: 'group',
-      label: L('fieldCost'),
       fields: [
         { name: 'amount', type: 'text', label: L('fieldAmount') },
         { name: 'currency', type: 'text', label: L('fieldCurrency') },
       ],
+      label: L('fieldCost'),
     },
     { name: 'error', type: 'textarea', label: L('fieldError') },
     { name: 'errorCode', type: 'text', label: L('fieldErrorCode') },
@@ -57,7 +57,6 @@ export const buildSMSLogsCollection = (
     baseFields.push({
       name: 'statusHistory',
       type: 'array',
-      label: L('fieldStatusHistory'),
       fields: [
         {
           name: 'status',
@@ -68,6 +67,7 @@ export const buildSMSLogsCollection = (
         { name: 'occurredAt', type: 'date', label: L('fieldOccurredAt') },
         { name: 'errorCode', type: 'text', label: L('fieldErrorCode') },
       ],
+      label: L('fieldStatusHistory'),
     })
   }
 

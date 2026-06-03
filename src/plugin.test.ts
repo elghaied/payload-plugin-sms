@@ -260,7 +260,7 @@ describe('smsPlugin', () => {
     expect(init).toHaveBeenCalledWith(payload)
   })
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   it('merges sms translations into config.i18n.translations (consumer wins)', () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const out = smsPlugin({ adapter: undefined } as any)({

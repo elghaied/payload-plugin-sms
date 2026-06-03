@@ -5,15 +5,15 @@ import { deepMergeSimple } from 'payload/shared'
 import type { SMSLogsCollectionOptions, SMSPluginConfig } from './types.js'
 
 import { buildSMSLogsCollection } from './collections/SMSLogs.js'
-import { translations } from './translations/index.js'
 import { makeSendSMS } from './sendSMS.js'
-import { deriveStatusCallbackUrl } from './webhooks/statusCallback.js'
+import { translations } from './translations/index.js'
 import { makeWebhookEndpointHandler } from './webhooks/endpoint.js'
 import {
   assertUniquePaths,
   collectWebhookHandlers,
   resolvePath,
 } from './webhooks/registry.js'
+import { deriveStatusCallbackUrl } from './webhooks/statusCallback.js'
 
 const resolveLogsSlug = (
   logs: boolean | SMSLogsCollectionOptions | undefined,
