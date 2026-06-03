@@ -2,6 +2,12 @@
 
 All notable changes to `@elghaied/payload-plugin-sms` are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.1] — 2026-06-03
+
+### Fixed
+
+- **Broken published entrypoints in 0.4.0.** npm ≥ 11 no longer applies `publishConfig` field overrides (it warns `Unknown publishConfig config "exports"` and ignores them), so 0.4.0 shipped with `main`/`exports` still pointing at `./src/*.ts` — which isn't in the published tarball, breaking every import. The src→dist swap is now done explicitly by `prepack`/`postpack` scripts, independent of the npm version. (Functionally identical to the intended 0.4.0; 0.4.0 is deprecated.)
+
 ## [0.4.0] — 2026-06-03
 
 ### Added

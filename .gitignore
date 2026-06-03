@@ -54,3 +54,6 @@ next-env.d.ts
 
 # Skill evaluation workspaces (test outputs, iteration artifacts)
 /.claude/skills/*-workspace/
+
+# prepack swaps package.json to dist-pointing; postpack restores. Backup is transient.
+package.json.prepack-backup
