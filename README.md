@@ -162,6 +162,7 @@ adapter.reset()   // clears it
 | `disabled`          | `boolean`                                                  | `false`       | Skips registration; logs a warning.                       |
 | `collections.logs`  | `boolean \| { slug?; admin?; includeContext?; statusHistory? }` | `false`  | Creates an `sms-logs` collection. `includeContext` adds a JSON `context` field; `statusHistory` adds an append-only status-event array. |
 | `widgets`           | `boolean`                                                  | `true`        | Registers the dashboard widget when logs enabled.         |
+| `tenantScoping`     | `{ field?: string; cookie?: string }`                      | — (off)       | Opt-in. Scopes the dashboard widget to the host's selected tenant. See [Dashboard widget](#dashboard-widget). |
 | `webhooks`          | `{ enabled; basePath?; statusCallbackUrl?; trustProxy?; verifySignature? }` | — | Enables the delivery-status receiver + auto-derived callback. See [Delivery-status webhooks](#delivery-status-webhooks). |
 | `onSend`            | `(args) => void \| Promise<void>`                          | —             | Called after every successful send.                       |
 | `onError`           | `(args) => void \| Promise<void>`                          | —             | Called when send fails. Original error is re-thrown.      |
@@ -205,6 +206,27 @@ Note: if you override the slug, set `widgets: false` — the bundled widget read
 When `widgets: true` and logs are enabled, the plugin registers an `admin.dashboard.widgets` entry that shows a 24h send count, the last 5 entries, and a link to the logs collection.
 
 Disable with `widgets: false`.
+
+### Multi-tenant scoping
+
+The plugin is single-tenant by design, so by default the widget queries `sms-logs` with the Local API's implicit `overrideAccess: true` and no tenant filter — it shows **every** row. In a multi-tenant host (e.g. `@payloadcms/plugin-multi-tenant` injecting a `tenant` field into `sms-logs`) that leaks other tenants' logs into the dashboard.
+
+Opt in with `tenantScoping` to make the widget honor the host's tenant selector:
+
+```ts
+smsPlugin({
+  adapter,
+  collections: { logs: true },
+  tenantScoping: { field: 'tenant', cookie: 'payload-tenant' }, // both optional; these are the defaults
+})
+```
+
+When enabled **and** the logs collection actually has the configured `field`, the widget:
+
+- reads the selected tenant id from the `cookie` and adds `where[field][equals]=<id>` to both the 24h count and the recent-5 list, and
+- runs the queries with `overrideAccess: false` and the real request/user, so any read access control the host added to `sms-logs` is respected.
+
+With no tenant selected ("all tenants"), it drops the tenant filter but still runs with `overrideAccess: false`, so the dashboard shows everything the current user is allowed to read. Omit `tenantScoping`, or leave the field off the collection, and the widget behaves exactly as before.
 
 ## Router adapter (multi-provider)
 

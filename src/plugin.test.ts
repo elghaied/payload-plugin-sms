@@ -151,6 +151,53 @@ describe('smsPlugin', () => {
     expect(widgets.some((w) => w.slug === 'sms-recent-logs')).toBe(true)
   })
 
+  test('passes resolved tenantScoping to the widget via serverProps when configured', () => {
+    const result = smsPlugin({
+      adapter: mockAdapter({ defaultFrom: '+15550000000' }),
+      collections: { logs: true },
+      tenantScoping: {},
+      widgets: true,
+    })(baseConfig()) as Config
+    const widget = (result.admin?.dashboard?.widgets ?? []).find(
+      (w) => w.slug === 'sms-recent-logs',
+    )
+    const Component = widget?.Component as { serverProps?: { tenantScoping?: unknown } }
+    expect(Component.serverProps?.tenantScoping).toEqual({
+      cookie: 'payload-tenant',
+      field: 'tenant',
+    })
+  })
+
+  test('honors custom tenantScoping field and cookie', () => {
+    const result = smsPlugin({
+      adapter: mockAdapter({ defaultFrom: '+15550000000' }),
+      collections: { logs: true },
+      tenantScoping: { cookie: 'my-tenant', field: 'org' },
+      widgets: true,
+    })(baseConfig()) as Config
+    const widget = (result.admin?.dashboard?.widgets ?? []).find(
+      (w) => w.slug === 'sms-recent-logs',
+    )
+    const Component = widget?.Component as { serverProps?: { tenantScoping?: unknown } }
+    expect(Component.serverProps?.tenantScoping).toEqual({
+      cookie: 'my-tenant',
+      field: 'org',
+    })
+  })
+
+  test('omits tenantScoping serverProps when not configured', () => {
+    const result = smsPlugin({
+      adapter: mockAdapter({ defaultFrom: '+15550000000' }),
+      collections: { logs: true },
+      widgets: true,
+    })(baseConfig()) as Config
+    const widget = (result.admin?.dashboard?.widgets ?? []).find(
+      (w) => w.slug === 'sms-recent-logs',
+    )
+    const Component = widget?.Component as { serverProps?: { tenantScoping?: unknown } }
+    expect(Component.serverProps?.tenantScoping).toBeUndefined()
+  })
+
   test('does not register widget when widgets:false', () => {
     const result = smsPlugin({
       adapter: mockAdapter({ defaultFrom: '+15550000000' }),

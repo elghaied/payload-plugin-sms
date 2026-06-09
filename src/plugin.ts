@@ -73,6 +73,12 @@ export const smsPlugin =
     const customLogsSlug = logsSlug !== 'sms-logs'
     const widgetsEnabled = pluginConfig.widgets !== false && logsEnabled && !customLogsSlug
     if (widgetsEnabled) {
+      const tenantScoping = pluginConfig.tenantScoping
+        ? {
+            cookie: pluginConfig.tenantScoping.cookie ?? 'payload-tenant',
+            field: pluginConfig.tenantScoping.field ?? 'tenant',
+          }
+        : undefined
       config.admin = config.admin ?? {}
       config.admin.dashboard = {
         ...(config.admin.dashboard ?? {}),
@@ -80,7 +86,11 @@ export const smsPlugin =
           ...(config.admin.dashboard?.widgets ?? []),
           {
             slug: 'sms-recent-logs',
-            Component: '@elghaied/payload-plugin-sms/rsc#SMSLogsWidget',
+            Component: {
+              exportName: 'SMSLogsWidget',
+              path: '@elghaied/payload-plugin-sms/rsc',
+              ...(tenantScoping ? { serverProps: { tenantScoping } } : {}),
+            },
             maxWidth: 'medium',
             minWidth: 'small',
           },

@@ -105,6 +105,18 @@ export interface SMSPluginConfig {
     log: null | Record<string, unknown>
     req: PayloadRequest
   }) => Promise<void> | void
+  /**
+   * Opt-in: scope the dashboard widget to the host's selected tenant. When set AND the
+   * logs collection carries `field`, the widget filters by the tenant id read from `cookie`
+   * and runs with `overrideAccess: false` so the host's read access control is honored.
+   * Omit entirely to leave the widget unchanged (single-tenant default).
+   */
+  tenantScoping?: {
+    /** Cookie holding the selected tenant id. Default: 'payload-tenant'. */
+    cookie?: string
+    /** Field on the logs collection that holds the tenant. Default: 'tenant'. */
+    field?: string
+  }
   webhooks?: SMSWebhooksConfig
   widgets?: boolean
 }
