@@ -2,6 +2,12 @@
 
 All notable changes to `@elghaied/payload-plugin-sms` are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [0.5.0] — 2026-06-09
+
+### Added
+
+- **Opt-in multi-tenant scoping for the dashboard widget** — new `tenantScoping?: { field?: string; cookie?: string }` plugin option (defaults `field: 'tenant'`, `cookie: 'payload-tenant'`). The SMS logs widget queried `sms-logs` via the Local API with the implicit `overrideAccess: true` and no tenant filter, so in a multi-tenant host (e.g. `@payloadcms/plugin-multi-tenant` injecting a `tenant` field into `sms-logs`) it showed **every** tenant's logs regardless of the admin tenant selector. When `tenantScoping` is set **and** the logs collection carries the configured field, the widget now reads the selected tenant from the cookie, filters both the 24h count and the recent-5 list by it, and runs with `overrideAccess: false` + the real request/user so the host's read access control is honored. With no tenant selected it drops the filter but still runs with `overrideAccess: false`. Omit the option, or leave the field off the collection, and the widget behaves exactly as before — single-tenant installs are unchanged. The config reaches the (string-referenced) server component via the widget's `Component.serverProps`.
+
 ## [0.4.2] — 2026-06-03
 
 ### Fixed
